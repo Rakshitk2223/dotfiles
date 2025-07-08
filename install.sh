@@ -142,8 +142,16 @@ main() {
     run_install_themes
     run_apply_themes
 
+    run_enable_services
+
     log_info "Installation complete!"
 }
+
+run_enable_services() {
+    log_info "Enabling and starting services..."
+    bash "$SCRIPTS_DIR/enable-services.sh"
+}
+
 
 run_apply_themes() {
     log_info "Applying themes..."
