@@ -1,0 +1,7 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "tokyonight",
+  "model": "google/gemini-2.5-flash",
+  "autoshare": false,
+  "autoupdate": true
+}

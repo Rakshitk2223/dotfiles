@@ -1,0 +1,6 @@
+bibata-cursor-theme
+grimblast-git
+opencode-bin
+vesktop-bin
+wlogout
+zen-browser-bin

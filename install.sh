@@ -1,0 +1,142 @@
+#!/bin/bash
+# This script automates the installation of a complete Arch Linux environment.
+
+set -euo pipefail
+
+# --- Script paths ---
+BASE_DIR=$(dirname "$0")
+SCRIPTS_DIR="$BASE_DIR/scripts"
+ARCH_PACKAGES_FILE="$SCRIPTS_DIR/arch_packages.txt"
+YAY_PACKAGES_FILE="$SCRIPTS_DIR/yay_packages.txt"
+
+# --- Log functions ---
+log_info() {
+    echo "[INFO] $1"
+}
+
+log_warn() {
+    echo "[WARN] $1"
+}
+
+log_error() {
+    echo "[ERROR] $1"
+    exit 1
+}
+
+# --- Helper functions ---
+check_command() {
+    command -v "$1" &> /dev/null
+}
+
+# --- Installation functions ---
+
+run_update_packages() {
+    log_info "Running package update script..."
+    bash "$SCRIPTS_DIR/update_packages.sh"
+}
+
+run_install_yay() {
+    log_info "Running yay installation script..."
+    bash "$SCRIPTS_DIR/install_yay.sh"
+}
+
+run_install_hardware_specific_packages() {
+    # ASUS-specific packages
+    read -p "Do you have an ASUS laptop? (y/N): " confirm_asus
+    if [[ "$confirm_asus" =~ ^[yY]$ ]]; then
+        log_info "Installing ASUS-specific packages..."
+        yay -S --noconfirm --needed asusctl supergfxctl
+    else
+        log_info "Skipping ASUS-specific packages."
+    fi
+
+    # NVIDIA-specific packages
+    read -p "Do you have an NVIDIA GPU? (y/N): " confirm_nvidia
+    if [[ "$confirm_nvidia" =~ ^[yY]$ ]]; then
+        log_info "Installing NVIDIA-specific packages..."
+        sudo pacman -S --noconfirm --needed nvidia-dkms nvidia-utils nvidia-settings libva-nvidia-driver
+    else
+        log_info "Skipping NVIDIA-specific packages."
+    fi
+}
+
+
+run_install_arch_packages() {
+    log_info "Installing packages from official repositories..."
+    
+    if [ ! -f "$ARCH_PACKAGES_FILE" ]; then
+        log_error "$ARCH_PACKAGES_FILE not found."
+    fi
+
+    # Filter out already installed packages
+    mapfile -t packages < <(grep -vE '^\s*#|^\s*$' "$ARCH_PACKAGES_FILE")
+    packages_to_install=()
+    for pkg in "${packages[@]}"; do
+        if ! pacman -Q "$pkg" &> /dev/null; then
+            packages_to_install+=("$pkg")
+        else
+            log_info "Package '$pkg' is already installed. Skipping."
+        fi
+    done
+
+    if [ ${#packages_to_install[@]} -gt 0 ]; then
+        log_info "Installing the following Arch packages: ${packages_to_install[*]}"
+        sudo pacman -S --noconfirm --needed "${packages_to_install[@]}"
+    else
+        log_info "All Arch packages are already installed."
+    fi
+}
+
+run_install_yay_packages() {
+    log_info "Installing AUR packages with yay..."
+
+    if ! check_command yay; then
+        log_error "yay is not installed. Please install it first."
+    fi
+
+    if [ ! -f "$YAY_PACKAGES_FILE" ]; then
+        log_error "$YAY_PACKAGES_FILE not found."
+    fi
+
+    # Filter out already installed packages
+    mapfile -t packages < <(grep -vE '^\s*#|^\s*$' "$YAY_PACKAGES_FILE")
+    packages_to_install=()
+    for pkg in "${packages[@]}"; do
+        if ! yay -Q "$pkg" &> /dev/null; then
+            packages_to_install+=("$pkg")
+        else
+            log_info "Package '$pkg' is already installed. Skipping."
+        fi
+    done
+
+    if [ ${#packages_to_install[@]} -gt 0 ]; then
+        log_info "Installing the following AUR packages: ${packages_to_install[*]}"
+        yay -S --noconfirm --needed "${packages_to_install[@]}"
+    else
+        log_info "All AUR packages are already installed."
+    fi
+}
+
+run_install_dev_tools() {
+    log_info "Installing development tools..."
+    bash "$SCRIPTS_DIR/install_go_rust.sh"
+    bash "$SCRIPTS_DIR/install_bun.sh"
+    bash "$SCRIPTS_DIR/install_node.sh"
+    bash "$SCRIPTS_DIR/install_uv.sh"
+}
+
+# --- Main execution ---
+main() {
+    log_info "Starting the installation process..."
+
+    run_update_packages
+    run_install_yay
+    run_install_hardware_specific_packages
+    run_install_arch_packages
+    run_install_yay_packages
+    run_install_dev_tools
+
+    log_info "Installation complete!"
+}
+
+main
