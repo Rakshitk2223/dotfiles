@@ -125,13 +125,23 @@ run_install_dev_tools() {
     bash "$SCRIPTS_DIR/install_uv.sh"
 }
 
+run_install_dotfiles() {
+    log_info "Running dotfiles installation script..."
+    bash "$SCRIPTS_DIR/install_dotfiles.sh"
+}
+
 make_scripts_executable() {
     log_info "Making scripts executable..."
     find "$SCRIPTS_DIR" -type f -name "*.sh" -exec chmod +x {} \;
 }
 
+update_submodules() {
+    log_info "Initializing and updating Git submodules..."
+    git submodule update --init --recursive
+}
+
 # --- Main execution ---
-main() {
+execute_installation() {
     # Ask for the administrator password upfront and run a keep-alive
     # to update the sudo timestamp until the script has finished.
     sudo -v
@@ -139,6 +149,7 @@ main() {
 
     log_info "Starting the installation process..."
 
+    update_submodules
     make_scripts_executable
     run_update_packages
     run_install_yay
@@ -155,7 +166,16 @@ main() {
 
     run_enable_services
 
-    log_info "Installation complete!"
+    run_install_dotfiles
+}
+
+# --- Main execution ---
+main() {
+    if execute_installation; then
+        log_info "Installation complete! Please reboot your system for all changes to take effect."
+    else
+        log_error "Installation failed. Please review the logs above and try again."
+    fi
 }
 
 run_enable_services() {
