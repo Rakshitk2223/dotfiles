@@ -1,6 +1,8 @@
-## Installation
+## Personal dotfiles configuration scripts
 
-To install these dotfiles, follow these steps:
+### Installation
+
+Steps : 
 
 1.  **Clone the repository recursively** into `~/.local/bin/dotfiles`:
 
@@ -24,6 +26,3 @@ To install these dotfiles, follow these steps:
     ```bash
     ./install.sh
     ```
-
-This script will guide you through the installation process, setting up your Arch Linux and Hyprland environment with all the necessary packages and configurations.
-
