@@ -3,45 +3,42 @@
 
 set -euo pipefail
 
-echo "Installing Node.js via nvm..."
+export NVM_DIR="$HOME/.nvm"
+
+log_info() {
+    echo "[INFO] $1"
+}
+
+# Ensure the nvm directory exists
+mkdir -p "$NVM_DIR"
 
 # Check if nvm is already installed
-if [ -s "$HOME/.nvm/nvm.sh" ]; then
-    echo "nvm is already installed. Loading nvm..."
-    \. "$HOME/.nvm/nvm.sh"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    log_info "nvm is already installed. Sourcing it..."
 else
-    echo "Downloading and installing nvm..."
+    log_info "Downloading and installing nvm..."
+    # Use the version from the official documentation
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-    
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to install nvm."
-        exit 1
-    fi
-    
-    # Load nvm for this session
-    \. "$HOME/.nvm/nvm.sh"
 fi
 
-# Verify nvm is available
-if ! command -v nvm &> /dev/null; then
-    echo "Error: nvm command not found after installation."
+# Source nvm to make it available in this script session
+# This is a critical step to prevent the script from hanging
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    \. "$NVM_DIR/nvm.sh"
+else
+    echo "[ERROR] nvm.sh not found after installation attempt."
     exit 1
 fi
 
-echo "Installing Node.js version 24..."
+# Now, use nvm to install Node.js
+log_info "Installing or verifying Node.js version 24..."
 nvm install 24
 
-if [ $? -eq 0 ]; then
-    echo "Node.js installed successfully."
-    
-    # Set Node 24 as default
-    nvm use 24
-    nvm alias default 24
-    
-    # Display versions
-    echo "Node.js version: $(node --version)"
-    echo "npm version: $(npm --version)"
-else
-    echo "Error: Failed to install Node.js."
-    exit 1
-fi
+# Set Node 24 as the default version
+log_info "Setting Node.js v24 as default..."
+nvm use 24
+nvm alias default 24
+
+log_info "Node.js installation complete."
+log_info "Node version: $(node -v)"
+log_info "npm version: $(npm -v)"
