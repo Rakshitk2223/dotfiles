@@ -136,7 +136,45 @@ main() {
     run_install_yay_packages
     run_install_dev_tools
 
+    run_install_tpm
+    run_install_ohmyzsh
+
+    run_install_themes
+    run_apply_themes
+
     log_info "Installation complete!"
 }
+
+run_apply_themes() {
+    log_info "Applying themes..."
+    bash "$SCRIPTS_DIR/apply-theme.sh"
+}
+
+run_install_themes() {
+    log_info "Installing themes..."
+    bash "$SCRIPTS_DIR/install_graphite_theme.sh"
+}
+
+
+run_install_ohmyzsh() {
+    log_info "Installing Oh My Zsh..."
+    if [ -d "$HOME/.oh-my-zsh" ]; then
+        log_info "Oh My Zsh is already installed."
+    else
+        sh -c "$(curl -fsSL https://install.ohmyz.sh/)" "" --unattended
+    fi
+}
+
+
+run_install_tpm() {
+    log_info "Installing tmux plugin manager (tpm)..."
+    if [ -d "$HOME/.tmux/plugins/tpm" ]; then
+        log_info "tpm is already installed."
+    else
+        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    fi
+    log_info "To apply the changes, run 'tmux source ~/.tmux.conf' inside a tmux session."
+}
+
 
 main

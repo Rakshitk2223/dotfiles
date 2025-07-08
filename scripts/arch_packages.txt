@@ -79,6 +79,7 @@ unrar
 unzip
 uwsm
 vim
+vlc
 waybar
 wget
 wireless_tools
