@@ -125,6 +125,11 @@ run_install_dev_tools() {
     bash "$SCRIPTS_DIR/install_uv.sh"
 }
 
+make_scripts_executable() {
+    log_info "Making scripts executable..."
+    find "$SCRIPTS_DIR" -type f -name "*.sh" -exec chmod +x {} \;
+}
+
 # --- Main execution ---
 main() {
     # Ask for the administrator password upfront and run a keep-alive
@@ -134,6 +139,7 @@ main() {
 
     log_info "Starting the installation process..."
 
+    make_scripts_executable
     run_update_packages
     run_install_yay
     run_install_hardware_specific_packages
