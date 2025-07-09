@@ -92,6 +92,7 @@ xdg-desktop-portal-hyprland
 xdg-utils
 xorg-server
 xorg-xinit
+yt-dlp
 zip
 zram-generator
 zsh
