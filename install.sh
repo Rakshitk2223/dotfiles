@@ -163,6 +163,8 @@ execute_installation() {
     run_install_dev_tools
 
     run_install_tpm
+    log_info "Setting zsh as default shell for the current user..."
+    chsh -s $(which zsh)
     run_install_ohmyzsh
 
     run_install_themes
