@@ -21,7 +21,6 @@ zstyle ':omz:update' mode auto      # update automatically without asking
 
 plugins=(git)
 
-fastfetch --config examples/13.jsonc
 
 # Auto-start tmux or attach to existing session
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
