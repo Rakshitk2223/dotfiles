@@ -80,8 +80,11 @@ run_install_arch_packages() {
     done
 
     if [ ${#packages_to_install[@]} -gt 0 ]; then
-        log_info "Installing the following Arch packages: ${packages_to_install[*]}"
-        sudo pacman -S --noconfirm --needed "${packages_to_install[@]}"
+        log_info "Attempting to install the following Arch packages: ${packages_to_install[*]}"
+        for pkg in "${packages_to_install[@]}"; do
+            log_info "Installing $pkg..."
+            sudo pacman -S --noconfirm --needed "$pkg" || log_warn "Failed to install $pkg. Continuing with other packages."
+        done
     else
         log_info "All Arch packages are already installed."
     fi
