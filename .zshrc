@@ -76,13 +76,4 @@ eval "$(fzf --zsh)"
 . "$HOME/.local/bin/env"
 
 
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
 
-# bun completions
-[ -s "/home/ricey/.bun/_bun" ] && source "/home/ricey/.bun/_bun"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
