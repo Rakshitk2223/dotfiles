@@ -64,7 +64,6 @@ slurp
 smartmontools
 sof-firmware
 spotify-launcher
-steam
 strace
 swappy
 swww

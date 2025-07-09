@@ -156,6 +156,7 @@ execute_installation() {
     run_install_hardware_specific_packages
     run_install_arch_packages
     run_install_yay_packages
+    sudo pacman -S --noconfirm --needed unzip
     run_install_dev_tools
 
     run_install_tpm
@@ -200,6 +201,11 @@ run_install_ohmyzsh() {
     if [ -d "$HOME/.oh-my-zsh" ]; then
         log_info "Oh My Zsh is already installed."
     else
+        # Ensure zsh is installed before attempting Oh My Zsh installation
+        if ! command -v zsh &> /dev/null; then
+            log_info "zsh not found, attempting to install zsh..."
+            sudo pacman -S --noconfirm --needed zsh || log_error "Failed to install zsh."
+        fi
         sh -c "$(curl -fsSL https://install.ohmyz.sh/)" "" --unattended
     fi
 }
