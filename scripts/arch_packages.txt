@@ -95,3 +95,7 @@ yt-dlp
 zip
 zram-generator
 zsh
+mtpfs
+android-file-transfer
+gvfs-mtp
+
