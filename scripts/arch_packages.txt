@@ -98,4 +98,7 @@ zsh
 mtpfs
 android-file-transfer
 gvfs-mtp
-
+libtheora
+gst-plugins-good
+gst-plugins-bad
+gst-plugins-ugly
