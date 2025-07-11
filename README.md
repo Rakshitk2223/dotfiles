@@ -7,7 +7,7 @@ Steps :
 1.  **Clone the repository recursively** into `~/.local/bin/dotfiles`:
 
     ```bash
-    git clone --recursive https://github.com/mohak34/dotfiles.git ~/.local/bin/dotfiles
+    git clone https://github.com/mohak34/dotfiles.git ~/.local/bin/dotfiles
     ```
 
 2.  **Navigate into the dotfiles directory**:
