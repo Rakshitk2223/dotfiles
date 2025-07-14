@@ -1,51 +1,79 @@
 window {
-  font-family: "JetBrainsMono Nerd Font", monospace; /* Set font */
-  margin: 0px;
-  border: 1px solid rgba(0, 0, 0, 0.9);
-  background-color: rgba(29, 31, 33, 0.95);
-  border-radius: 10px;
-}
-
-#input {
-  margin: 5px;
-  border: none;
-  color: #f8f8f2;
-  background-color: rgba(55, 59, 65, 0.95);
-}
-
-#inner-box {
-  margin: 5px;
-  border: none;
+  font-family: "JetBrains Mono";
+  font-weight: normal;
+  font-size: 15px;
+  border: 1px solid #313244;
   background-color: transparent;
+  border-radius: 12px;
 }
 
 #outer-box {
-  margin: 5px;
-  border: none;
-  background-color: transparent;
+  border: 1px solid #313244;
+  border-radius: 12px;
+  background-color: #11111b;
+}
+
+#input {
+  padding: 12px 24px;
+  color: #cdd6f4;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  border-bottom: 1px solid #313244;
+  outline: none;
+  box-shadow: none;
+  font-weight: bold;
+  background-color: #11111b;
+  outline: none;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+  border-top-right-radius: 12px;
+  border-top-left-radius: 12px;
+}
+
+#inner-box {
+  margin: 8px;
+  color: #cdd6f4;
+  font-weight: bold;
+  background-color: #11111b;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 #scroll {
-  margin: 0px;
   border: none;
+  border-radius: 0px;
 }
 
-#text {
-  margin: 5px;
+#img {
+  margin-right: 6px;
+  object-fit: contain;
+}
+
+#img:selected {
+  outline: none;
+  box-shadow: none;
+}
+
+#text:selected {
+  outline: none;
+  box-shadow: none;
+  color: #cdd6f4;
   border: none;
-  color: #c5c8c6;
+  border-radius: 0px;
+  background-color: #1e1e2e;
 }
 
 #entry {
+  padding: 12px;
+  outline: none;
+  box-shadow: none;
   border: none;
-}
-
-#entry:focus {
-  border: none;
+  border-radius: 12px;
+  background-color: transparent;
 }
 
 #entry:selected {
-  background-color: rgba(55, 59, 65, 0.95);
-  border-radius: 5px;
-  border: none;
+  border-radius: 6px;
+  background-color: #1e1e2e;
 }
