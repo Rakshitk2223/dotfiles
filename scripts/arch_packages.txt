@@ -103,3 +103,7 @@ libtheora
 gst-plugins-good
 gst-plugins-bad
 gst-plugins-ugly
+sddm
+qt6-svg
+qt6-virtualkeyboard
+qt6-multimedia-ffmpeg

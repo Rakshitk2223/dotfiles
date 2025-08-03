@@ -198,6 +198,7 @@ run_apply_themes() {
 run_install_themes() {
     log_info "Installing themes..."
     bash "$SCRIPTS_DIR/install_graphite_theme.sh"
+    bash "$SCRIPTS_DIR/install_sddm_theme.sh"
 }
 
 
