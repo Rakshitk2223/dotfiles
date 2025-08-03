@@ -26,3 +26,15 @@ Steps :
     ```bash
     ./install.sh
     ```
+
+### Update
+
+To update to the latest configuration and packages:
+
+```bash
+./update.sh [--dry-run] [--force] [--backup-changed]
+```
+
+- --dry-run: show what would change without applying
+- --force: overwrite locally changed files
+- --backup-changed: back up files before overwriting

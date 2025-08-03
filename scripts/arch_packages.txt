@@ -107,3 +107,4 @@ sddm
 qt6-svg
 qt6-virtualkeyboard
 qt6-multimedia-ffmpeg
+piper
