@@ -172,6 +172,9 @@ execute_installation() {
 
     run_enable_services
 
+    bash "$SCRIPTS_DIR/sync-wallpapers.sh"
+    bash "$SCRIPTS_DIR/set-wallpaper.sh"
+
     run_install_dotfiles
 }
 

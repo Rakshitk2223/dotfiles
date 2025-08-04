@@ -130,6 +130,8 @@ main() {
   sync_arch_list
   update_aur_list
   reapply_dotfiles
+  $DRY_RUN || bash "$SCRIPTS_DIR/sync-wallpapers.sh"
+  $DRY_RUN || bash "$SCRIPTS_DIR/set-wallpaper.sh"
   reapply_themes
   LOG "Update complete"
 }
