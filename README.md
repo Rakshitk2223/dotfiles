@@ -25,14 +25,14 @@ Arch Linux + Hyprland configuration with a modern, maintainable structure.
 ### One-Line Install
 
 ```bash
-curl -sL https://raw.githubusercontent.com/USER/dotfiles/main/boot.sh | bash
+curl -sL https://raw.githubusercontent.com/mohak34/dotfiles/main/boot.sh | bash
 ```
 
 ### Manual Install
 
 ```bash
 # Clone repository
-git clone https://github.com/USER/dotfiles.git ~/.local/bin/dotfiles
+git clone https://github.com/mohak34/dotfiles.git ~/.local/bin/dotfiles
 
 # Run installer
 cd ~/.local/bin/dotfiles
