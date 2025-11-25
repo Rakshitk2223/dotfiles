@@ -1,0 +1,54 @@
+#!/bin/zsh
+# Aliases - command shortcuts
+
+# Package management (pacman)
+alias pacup="sudo pacman -Syu --noconfirm --needed"
+alias pacin="sudo pacman -S --noconfirm --needed"
+alias pacrm="sudo pacman -R"
+alias pacrmf="sudo pacman -Rns"
+alias psec="pacman -Ss"
+
+# Package management (yay/AUR)
+alias yayup="yay -Syu --noconfirm --needed"
+alias yayin="yay -S --noconfirm --needed"
+alias yayrm="yay -R"
+alias yayrmf="yay -Rns"
+alias ysec="yay -Ss"
+
+# Directory navigation
+alias conf="cd ~/.config/"
+alias proj="cd ~/Workspace/Projects/"
+alias work="cd ~/Workspace/"
+alias down="cd ~/Downloads/"
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# Tmux
+alias ta="tmux a"
+alias tks="tmux kill-server"
+
+# File listing (eza)
+if command -v eza &> /dev/null; then
+    alias ls="eza --long --git --no-permissions --no-user --color=always --icons=always"
+    alias la="eza --long --git --all --no-permissions --no-user --color=always --icons=always"
+    alias lt="eza --tree --level=2 --long --git --no-permissions --no-user --color=always --icons=always"
+fi
+
+# Git
+alias lg="lazygit"
+alias gac="git add . && git commit -m"
+alias gpm="git push -u origin main"
+
+# Applications
+alias spo="spotify_player"
+alias vdl="yt-dlp --limit-rate 20M"
+
+# Warp VPN
+alias wcon="warp-cli connect"
+alias wdis="warp-cli disconnect"
+alias wstat="warp-cli status"
+
+# Source user's local aliases (for custom aliases)
+# Create ~/.config/dotfiles/zsh/aliases.local to add your own
+[[ -f "$DOTFILES_USER_CONFIG/zsh/aliases.local" ]] && source "$DOTFILES_USER_CONFIG/zsh/aliases.local"

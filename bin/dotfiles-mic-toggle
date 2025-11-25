@@ -1,0 +1,18 @@
+#!/bin/bash
+# Microphone toggle script with notifications
+# Usage: dotfiles-mic-toggle
+# Toggles the default source microphone and shows notification
+
+set -euo pipefail
+
+pamixer --default-source -t
+
+if pamixer --get-mute --default-source | grep -q true; then
+    dunstify -a "Microphone" -h string:x-dunst-stack-tag:mic "Muted" -i audio-input-microphone-muted -t 2000
+else
+    VOLUME=$(pamixer --default-source --get-volume)
+    dunstify -a "Microphone" -h string:x-dunst-stack-tag:mic "Unmuted ($VOLUME%)" -i audio-input-microphone -t 2000
+fi
+
+# Signal waybar to update microphone module
+pkill -RTMIN+8 waybar 2>/dev/null || true

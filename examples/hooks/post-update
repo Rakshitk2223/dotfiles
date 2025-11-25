@@ -1,0 +1,31 @@
+#!/bin/bash
+# Example post-update hook
+# Copy to: ~/.config/dotfiles/hooks/post-update
+
+set -euo pipefail
+
+echo "Running post-update tasks..."
+
+# Example: Reload Hyprland config
+if command -v hyprctl &>/dev/null; then
+    hyprctl reload && echo "Hyprland config reloaded"
+fi
+
+# Example: Restart waybar
+if pgrep waybar &>/dev/null; then
+    killall waybar
+    waybar &
+    echo "Waybar restarted"
+fi
+
+# Example: Send notification
+if command -v notify-send &>/dev/null; then
+    notify-send "Dotfiles Updated" "Your system has been updated to the latest version"
+fi
+
+# Example: Update tmux plugins
+# if [[ -d ~/.tmux/plugins/tpm ]]; then
+#     ~/.tmux/plugins/tpm/bin/update_plugins all
+# fi
+
+echo "Post-update hook complete!"

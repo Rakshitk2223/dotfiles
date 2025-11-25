@@ -1,0 +1,12 @@
+#!/bin/bash
+# Waybar toggle script
+# Usage: dotfiles-waybar-toggle
+# Toggles the Waybar on/off
+
+set -euo pipefail
+
+if pgrep -x waybar >/dev/null; then
+    pkill -x waybar
+else
+    waybar &
+fi

@@ -1,0 +1,25 @@
+# State files (user-specific, created at runtime)
+.dotfiles_state
+
+# Local user overrides (not tracked - user customizations)
+.config/hypr/local/
+
+# Editor/IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Build artifacts (if any tooling is added later)
+*.o
+*.out

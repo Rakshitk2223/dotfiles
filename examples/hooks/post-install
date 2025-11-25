@@ -1,0 +1,25 @@
+#!/bin/bash
+# Example post-install hook
+# Copy to: ~/.config/dotfiles/hooks/post-install
+
+set -euo pipefail
+
+echo "Running post-install customizations..."
+
+# Example: Install additional packages you always want
+# yay -S --noconfirm spotify discord slack-desktop
+
+# Example: Clone your private configs
+# git clone git@github.com:USER/private-configs.git ~/.config/private
+
+# Example: Set up development environment
+# mkdir -p ~/projects
+
+# Example: Configure git
+# git config --global user.name "Your Name"
+# git config --global user.email "you@example.com"
+
+# Example: Start and enable services
+# systemctl --user enable --now syncthing
+
+echo "Post-install hook complete!"

@@ -1,0 +1,62 @@
+#!/bin/bash
+# Display dotfiles version and installation status
+# Usage: dotfiles-version
+
+set -euo pipefail
+
+# Determine dotfiles location
+DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.local/bin/dotfiles}"
+
+# Source state library
+if [[ -f "$DOTFILES_PATH/lib/state.sh" ]]; then
+    source "$DOTFILES_PATH/lib/state.sh"
+else
+    echo "Error: Could not find state library at $DOTFILES_PATH/lib/state.sh"
+    exit 1
+fi
+
+# Colors (only if terminal supports it)
+if [[ -t 1 ]]; then
+    GREEN='\033[0;32m'
+    YELLOW='\033[0;33m'
+    RED='\033[0;31m'
+    BLUE='\033[0;34m'
+    NC='\033[0m' # No Color
+else
+    GREEN=''
+    YELLOW=''
+    RED=''
+    BLUE=''
+    NC=''
+fi
+
+# Get version info
+installed_version="$(state_get_version)"
+repo_version="$(state_get_repo_version)"
+installed_at="$(state_get_installed_at)"
+updated_at="$(state_get_updated_at)"
+
+# Display header
+echo -e "${BLUE}Dotfiles${NC} v${repo_version}"
+echo ""
+
+# Installation status
+if [[ "$installed_version" == "not installed" ]]; then
+    echo -e "Status:       ${RED}Not installed${NC}"
+    echo ""
+    echo "Run 'bash $DOTFILES_PATH/scripts/install_dotfiles.sh' to install"
+else
+    echo -e "Installed:    ${GREEN}$installed_version${NC}"
+    echo "Install date: $installed_at"
+    echo "Last update:  $updated_at"
+    echo ""
+    
+    # Check for updates
+    if [[ "$installed_version" != "$repo_version" ]]; then
+        echo -e "Status:       ${YELLOW}Update available${NC} ($installed_version -> $repo_version)"
+        echo ""
+        echo "Run 'bash $DOTFILES_PATH/update.sh' to update"
+    else
+        echo -e "Status:       ${GREEN}Up to date${NC}"
+    fi
+fi

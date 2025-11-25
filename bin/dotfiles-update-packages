@@ -1,0 +1,297 @@
+#!/bin/bash
+# Sync and install packages from dotfiles package lists
+# Handles both pacman (Arch) and AUR (yay) packages
+
+set -euo pipefail
+
+REPO_ROOT="${REPO_ROOT:-$HOME/.local/bin/dotfiles}"
+SCRIPTS_DIR="$REPO_ROOT/scripts"
+ARCH_PACKAGES="$SCRIPTS_DIR/arch_packages.txt"
+AUR_PACKAGES="$SCRIPTS_DIR/yay_packages.txt"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() {
+    echo -e "${GREEN}[PKG]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[PKG]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[PKG]${NC} $1"
+}
+
+show_help() {
+    cat << EOF
+Usage: dotfiles-update-packages [OPTIONS]
+
+Install missing packages from dotfiles package lists.
+
+Options:
+    -h, --help          Show this help message
+    --dry-run           Show what would be installed without installing
+    --sync              Also run system update (pacman -Syu)
+    --no-aur            Skip AUR packages
+    --list              List packages in dotfiles (installed status)
+
+Package lists:
+    Arch (pacman): $ARCH_PACKAGES
+    AUR (yay):     $AUR_PACKAGES
+
+Exit codes:
+    0   Success (packages installed or already present)
+    1   Error occurred
+EOF
+}
+
+# Read packages from file, ignoring comments and empty lines
+read_package_list() {
+    local file="$1"
+    if [[ -f "$file" ]]; then
+        grep -vE '^(#|\s*$)' "$file" 2>/dev/null || true
+    fi
+}
+
+# Check if package is installed (pacman)
+is_installed_pacman() {
+    pacman -Q "$1" &>/dev/null
+}
+
+# Check if package is installed (AUR/yay)
+is_installed_aur() {
+    yay -Q "$1" &>/dev/null
+}
+
+# Get missing packages from list
+get_missing_packages() {
+    local file="$1"
+    local checker="$2"
+    local missing=()
+    
+    while IFS= read -r pkg; do
+        [[ -z "$pkg" ]] && continue
+        if ! $checker "$pkg"; then
+            missing+=("$pkg")
+        fi
+    done < <(read_package_list "$file")
+    
+    printf '%s\n' "${missing[@]}"
+}
+
+# List packages with status
+list_packages() {
+    echo -e "${CYAN}Arch packages ($ARCH_PACKAGES):${NC}"
+    if [[ -f "$ARCH_PACKAGES" ]]; then
+        while IFS= read -r pkg; do
+            [[ -z "$pkg" ]] && continue
+            if is_installed_pacman "$pkg"; then
+                echo -e "  ${GREEN}✓${NC} $pkg"
+            else
+                echo -e "  ${RED}✗${NC} $pkg ${YELLOW}(not installed)${NC}"
+            fi
+        done < <(read_package_list "$ARCH_PACKAGES")
+    else
+        echo "  (file not found)"
+    fi
+    
+    echo ""
+    echo -e "${CYAN}AUR packages ($AUR_PACKAGES):${NC}"
+    if [[ -f "$AUR_PACKAGES" ]]; then
+        if command -v yay >/dev/null 2>&1; then
+            while IFS= read -r pkg; do
+                [[ -z "$pkg" ]] && continue
+                if is_installed_aur "$pkg"; then
+                    echo -e "  ${GREEN}✓${NC} $pkg"
+                else
+                    echo -e "  ${RED}✗${NC} $pkg ${YELLOW}(not installed)${NC}"
+                fi
+            done < <(read_package_list "$AUR_PACKAGES")
+        else
+            echo "  (yay not installed - cannot check AUR packages)"
+        fi
+    else
+        echo "  (file not found)"
+    fi
+}
+
+# Install missing Arch packages
+install_arch_packages() {
+    local dry_run="$1"
+    
+    if [[ ! -f "$ARCH_PACKAGES" ]]; then
+        log_warn "Arch package list not found: $ARCH_PACKAGES"
+        return 0
+    fi
+    
+    log_info "Checking Arch packages..."
+    
+    local missing=()
+    while IFS= read -r pkg; do
+        [[ -z "$pkg" ]] && continue
+        missing+=("$pkg")
+    done < <(get_missing_packages "$ARCH_PACKAGES" is_installed_pacman)
+    
+    if [[ ${#missing[@]} -eq 0 ]]; then
+        log_info "All Arch packages already installed"
+        return 0
+    fi
+    
+    log_info "Missing packages: ${missing[*]}"
+    
+    if $dry_run; then
+        log_info "[DRY RUN] Would install: ${missing[*]}"
+        return 0
+    fi
+    
+    log_info "Installing ${#missing[@]} packages..."
+    if sudo pacman -S --noconfirm --needed "${missing[@]}"; then
+        log_info "Arch packages installed successfully"
+    else
+        log_warn "Some packages may have failed to install"
+        return 1
+    fi
+}
+
+# Install missing AUR packages
+install_aur_packages() {
+    local dry_run="$1"
+    
+    if ! command -v yay >/dev/null 2>&1; then
+        log_warn "yay not found - skipping AUR packages"
+        return 0
+    fi
+    
+    if [[ ! -f "$AUR_PACKAGES" ]]; then
+        log_warn "AUR package list not found: $AUR_PACKAGES"
+        return 0
+    fi
+    
+    log_info "Checking AUR packages..."
+    
+    local missing=()
+    while IFS= read -r pkg; do
+        [[ -z "$pkg" ]] && continue
+        missing+=("$pkg")
+    done < <(get_missing_packages "$AUR_PACKAGES" is_installed_aur)
+    
+    if [[ ${#missing[@]} -eq 0 ]]; then
+        log_info "All AUR packages already installed"
+        return 0
+    fi
+    
+    log_info "Missing AUR packages: ${missing[*]}"
+    
+    if $dry_run; then
+        log_info "[DRY RUN] Would install: ${missing[*]}"
+        return 0
+    fi
+    
+    log_info "Installing ${#missing[@]} AUR packages..."
+    if yay -S --noconfirm --needed "${missing[@]}"; then
+        log_info "AUR packages installed successfully"
+    else
+        log_warn "Some AUR packages may have failed to install"
+        return 1
+    fi
+}
+
+# Run system sync (pacman -Syu)
+sync_system() {
+    local dry_run="$1"
+    
+    log_info "Synchronizing system packages..."
+    
+    if $dry_run; then
+        log_info "[DRY RUN] Would run: sudo pacman -Syu"
+        return 0
+    fi
+    
+    if sudo pacman -Syu --noconfirm; then
+        log_info "System sync complete"
+    else
+        log_warn "System sync had issues (non-critical)"
+    fi
+    
+    if command -v yay >/dev/null 2>&1; then
+        log_info "Synchronizing AUR packages..."
+        if yay -Syu --noconfirm; then
+            log_info "AUR sync complete"
+        else
+            log_warn "AUR sync had issues (non-critical)"
+        fi
+    fi
+}
+
+main() {
+    local dry_run=false
+    local do_sync=false
+    local skip_aur=false
+    local do_list=false
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            --dry-run)
+                dry_run=true
+                shift
+                ;;
+            --sync)
+                do_sync=true
+                shift
+                ;;
+            --no-aur)
+                skip_aur=true
+                shift
+                ;;
+            --list)
+                do_list=true
+                shift
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
+    # List mode
+    if $do_list; then
+        list_packages
+        exit 0
+    fi
+    
+    # Check if running on Arch
+    if ! command -v pacman >/dev/null 2>&1; then
+        log_error "pacman not found - this script is for Arch Linux"
+        exit 1
+    fi
+    
+    # System sync if requested
+    if $do_sync; then
+        sync_system "$dry_run"
+    fi
+    
+    # Install Arch packages
+    install_arch_packages "$dry_run" || true
+    
+    # Install AUR packages
+    if ! $skip_aur; then
+        install_aur_packages "$dry_run" || true
+    fi
+    
+    log_info "Package sync complete"
+    exit 0
+}
+
+main "$@"

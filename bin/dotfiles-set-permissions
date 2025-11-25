@@ -1,0 +1,23 @@
+#!/bin/bash
+# Set permissions for various scripts in the dotfiles
+# Usage: dotfiles-set-permissions
+# This script ensures all dotfiles scripts are executable
+
+set -euo pipefail
+
+DOTFILES_BIN="$HOME/.local/bin"
+
+# Make dotfiles bin scripts executable
+for script in "$DOTFILES_BIN"/dotfiles-*; do
+    if [ -f "$script" ]; then
+        chmod +x "$script"
+    fi
+done
+
+# Make waybar scripts executable
+WAYBAR_SCRIPTS="$HOME/.config/waybar/scripts"
+if [ -d "$WAYBAR_SCRIPTS" ]; then
+    chmod +x "$WAYBAR_SCRIPTS"/*.sh 2>/dev/null || true
+fi
+
+echo "Permissions set for dotfiles scripts"

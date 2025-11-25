@@ -113,7 +113,7 @@
 		"return-type": "json",
 		"exec": "~/.config/waybar/scripts/microphone.sh",
 		"interval": 2,
-		"on-click": "~/.local/bin/scripts/mic-toggle.sh",
+		"on-click": "dotfiles-mic-toggle",
 		"on-click-right": "GTK_THEME=Adwaita-dark pavucontrol",
 		"signal": 8,
 		"restart-interval": 5

@@ -1,0 +1,40 @@
+#!/bin/zsh
+# Functions - reusable shell functions
+
+# Auto-start tmux or attach to existing session
+start_tmux() {
+    if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+        if tmux has-session &> /dev/null; then
+            tmux attach
+        else
+            tmux
+        fi
+    fi
+}
+
+# Open file or directory with default application
+open() {
+    xdg-open "$@" >/dev/null 2>&1 &
+}
+
+# Quick neovim - open current dir if no args
+n() {
+    if [ "$#" -eq 0 ]; then
+        nvim .
+    else
+        nvim "$@"
+    fi
+}
+
+# Dotfiles management shortcuts
+dotfiles-cd() {
+    cd "$DOTFILES_PATH"
+}
+
+dotfiles-edit() {
+    $EDITOR "$DOTFILES_PATH"
+}
+
+# Source user's local functions (for custom functions)
+# Create ~/.config/dotfiles/zsh/functions.local to add your own
+[[ -f "$DOTFILES_USER_CONFIG/zsh/functions.local" ]] && source "$DOTFILES_USER_CONFIG/zsh/functions.local"

@@ -1,0 +1,52 @@
+#!/bin/zsh
+# Shell configuration - environment variables and shell settings
+
+# Dotfiles path
+export DOTFILES_PATH="$HOME/.local/bin/dotfiles"
+export PATH="$DOTFILES_PATH/bin:$HOME/.local/bin:$PATH"
+
+# User config directory for local customizations
+export DOTFILES_USER_CONFIG="$HOME/.config/dotfiles"
+
+# Editor
+export EDITOR=nvim
+export VISUAL=nvim
+
+# Wayland/Hyprland
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=Hyprland
+export QT_QPA_PLATFORM=wayland
+
+# CUDA (optional - only if CUDA is installed)
+if [[ -d "/opt/cuda" ]]; then
+    export PATH="/opt/cuda/bin:$PATH"
+    export CUDA_DIR=/opt/cuda
+    export LD_LIBRARY_PATH="/opt/cuda/lib64:$LD_LIBRARY_PATH"
+    export TF_CUDA_LIBDEVICE=/opt/cuda/nvvm/libdevice
+    export XLA_FLAGS=--xla_gpu_cuda_data_dir=/opt/cuda
+fi
+
+# History control
+HISTSIZE=32768
+SAVEHIST=32768
+HISTFILE=~/.zsh_history
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+setopt SHARE_HISTORY
+
+# NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# FZF
+if command -v fzf &> /dev/null; then
+    eval "$(fzf --zsh)"
+fi
+
+# Load local bin env if exists
+[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
+
+# Source user's local shell config (for custom exports/env vars)
+# Create ~/.config/dotfiles/zsh/shell.local to add your own
+[[ -f "$DOTFILES_USER_CONFIG/zsh/shell.local" ]] && source "$DOTFILES_USER_CONFIG/zsh/shell.local"

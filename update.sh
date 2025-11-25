@@ -1,9 +1,29 @@
 #!/bin/bash
+# Legacy update script - redirects to new modular update system
+# For direct usage, run: dotfiles-update
+
 set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Check if new update system is available
+if [[ -x "$BASE_DIR/bin/dotfiles-update" ]]; then
+    echo "[INFO] Using new modular update system..."
+    echo "[INFO] You can also run 'dotfiles-update' directly"
+    echo ""
+    exec "$BASE_DIR/bin/dotfiles-update" "$@"
+fi
+
+# Fallback to legacy update if new system not available
 SCRIPTS_DIR="$BASE_DIR/scripts"
 PROTECTED_LIST="$SCRIPTS_DIR/protected_paths.txt"
+
+# Source state library
+source "$BASE_DIR/lib/state.sh"
+
+# Source hooks library
+source "$BASE_DIR/lib/hooks.sh"
+
 LOG() { echo "[INFO] $*"; }
 WARN() { echo "[WARN] $*"; }
 ERR() { echo "[ERROR] $*" 1>&2; }
@@ -125,7 +145,24 @@ reapply_themes() {
 
 main() {
   LOG "Starting update"
+  
+  # Run pre-update hook (only if not dry run)
+  if ! $DRY_RUN; then
+    LOG "Running pre-update hooks..."
+    hook_run pre-update || true
+  fi
+  
   update_repo
+  
+  # Run migrations after pulling new code but before applying dotfiles
+  if ! $DRY_RUN; then
+    LOG "Checking for pending migrations..."
+    migrations_run_all || {
+      ERR "Migration failed, aborting update"
+      exit 1
+    }
+  fi
+  
   update_packages
   sync_arch_list
   update_aur_list
@@ -133,6 +170,17 @@ main() {
   $DRY_RUN || bash "$SCRIPTS_DIR/sync-wallpapers.sh"
   $DRY_RUN || bash "$SCRIPTS_DIR/set-wallpaper.sh"
   reapply_themes
+  
+  # Record update state (only if not dry run)
+  if ! $DRY_RUN; then
+    LOG "Recording update state..."
+    state_record_update
+    
+    # Run post-update hook
+    LOG "Running post-update hooks..."
+    hook_run post-update || true
+  fi
+  
   LOG "Update complete"
 }
 

@@ -1,0 +1,46 @@
+#!/bin/bash
+# Run a dotfiles hook by name
+# Usage: dotfiles-hook <hook-name> [args...]
+# Example: dotfiles-hook post-update
+
+set -euo pipefail
+
+# Determine dotfiles location
+DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.local/bin/dotfiles}"
+
+# Source hooks library
+if [[ -f "$DOTFILES_PATH/lib/hooks.sh" ]]; then
+    source "$DOTFILES_PATH/lib/hooks.sh"
+else
+    echo "Error: Could not find hooks library at $DOTFILES_PATH/lib/hooks.sh"
+    exit 1
+fi
+
+# Show usage if no arguments
+if [[ $# -lt 1 ]]; then
+    echo "Usage: dotfiles-hook <hook-name> [args...]"
+    echo ""
+    echo "Run a user-defined hook script."
+    echo ""
+    echo "Examples:"
+    echo "  dotfiles-hook post-install"
+    echo "  dotfiles-hook post-update"
+    echo "  dotfiles-hook pre-update"
+    echo ""
+    echo "Hooks are located in: $HOOKS_DIR"
+    echo ""
+    echo "To list all hooks, run: dotfiles-hook --list"
+    exit 1
+fi
+
+# Handle --list flag
+if [[ "$1" == "--list" ]]; then
+    hooks_list
+    exit 0
+fi
+
+# Run the hook
+HOOK_NAME="$1"
+shift
+
+hook_run "$HOOK_NAME" "$@"

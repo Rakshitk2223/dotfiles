@@ -1,234 +1,435 @@
 #!/bin/bash
-# This script automates the installation of a complete Arch Linux environment.
+# Dotfiles Installation Script
+# Installs a complete Arch Linux + Hyprland environment
+#
+# Usage:
+#   ./install.sh              # Interactive install
+#   ./install.sh --minimal    # Skip optional packages
+#   ./install.sh --help       # Show help
 
 set -euo pipefail
 
-# --- Script paths ---
-BASE_DIR=$(dirname "$0")
+# Script paths
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$BASE_DIR/scripts"
-ARCH_PACKAGES_FILE="$SCRIPTS_DIR/arch_packages.txt"
-YAY_PACKAGES_FILE="$SCRIPTS_DIR/yay_packages.txt"
 
-# --- Log functions ---
-log_info() {
-    echo "[INFO] $1"
+# Source helper modules
+source "$SCRIPTS_DIR/helpers/logging.sh"
+source "$SCRIPTS_DIR/helpers/errors.sh"
+source "$SCRIPTS_DIR/helpers/presentation.sh"
+
+# Source install modules
+source "$SCRIPTS_DIR/install/preflight.sh"
+source "$SCRIPTS_DIR/install/packages.sh"
+source "$SCRIPTS_DIR/install/hardware.sh"
+
+# Installation options
+SKIP_PREFLIGHT=false
+SKIP_PACKAGES=false
+SKIP_DEV_TOOLS=false
+SKIP_THEMES=false
+MINIMAL_INSTALL=false
+AUTO_YES=false
+DRY_RUN=false
+INSTALL_NVIDIA=false
+INSTALL_ASUS=false
+
+show_help() {
+    cat << EOF
+Usage: install.sh [OPTIONS]
+
+Install dotfiles and configure Arch Linux + Hyprland environment.
+
+Options:
+    -h, --help          Show this help message
+    -y, --yes           Auto-confirm all prompts
+    --dry-run           Show what would be done without making changes
+    --minimal           Minimal install (skip optional packages, themes)
+    --no-preflight      Skip preflight checks
+    --no-packages       Skip package installation
+    --no-dev-tools      Skip development tools (go, rust, node, etc.)
+    --no-themes         Skip theme installation
+    --nvidia            Install NVIDIA drivers (auto-detected if not specified)
+    --asus              Install ASUS tools (auto-detected if not specified)
+
+Examples:
+    ./install.sh                    # Full interactive install
+    ./install.sh -y                 # Auto-confirm everything
+    ./install.sh --minimal          # Minimal install
+    ./install.sh --nvidia --asus    # Include specific hardware support
+EOF
 }
 
-log_warn() {
-    echo "[WARN] $1"
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -y|--yes)
+                AUTO_YES=true
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --minimal)
+                MINIMAL_INSTALL=true
+                SKIP_DEV_TOOLS=true
+                SKIP_THEMES=true
+                shift
+                ;;
+            --no-preflight)
+                SKIP_PREFLIGHT=true
+                shift
+                ;;
+            --no-packages)
+                SKIP_PACKAGES=true
+                shift
+                ;;
+            --no-dev-tools)
+                SKIP_DEV_TOOLS=true
+                shift
+                ;;
+            --no-themes)
+                SKIP_THEMES=true
+                shift
+                ;;
+            --nvidia)
+                INSTALL_NVIDIA=true
+                shift
+                ;;
+            --asus)
+                INSTALL_ASUS=true
+                shift
+                ;;
+            *)
+                log_warn "Unknown option: $1"
+                shift
+                ;;
+        esac
+    done
 }
 
-log_error() {
-    echo "[ERROR] $1"
-    exit 1
-}
-
-# --- Helper functions ---
-check_command() {
-    command -v "$1" &> /dev/null
-}
-
-# --- Installation functions ---
-
-run_update_packages() {
-    log_info "Running package update script..."
-    bash "$SCRIPTS_DIR/update_packages.sh"
-}
-
-run_install_yay() {
-    log_info "Running yay installation script..."
-    bash "$SCRIPTS_DIR/install_yay.sh"
-}
-
-run_install_hardware_specific_packages() {
-    # ASUS-specific packages
-    read -p "Do you have an ASUS laptop? (y/N): " confirm_asus
-    if [[ "$confirm_asus" =~ ^[yY]$ ]]; then
-        log_info "Installing ASUS-specific packages..."
-        yay -S --noconfirm --needed asusctl supergfxctl
-    else
-        log_info "Skipping ASUS-specific packages."
-    fi
-
-    # NVIDIA-specific packages
-    read -p "Do you have an NVIDIA GPU? (y/N): " confirm_nvidia
-    if [[ "$confirm_nvidia" =~ ^[yY]$ ]]; then
-        log_info "Installing NVIDIA-specific packages..."
-        sudo pacman -S --noconfirm --needed nvidia-dkms nvidia-utils nvidia-settings libva-nvidia-driver
-    else
-        log_info "Skipping NVIDIA-specific packages."
-    fi
-}
-
-
-run_install_arch_packages() {
-    log_info "Installing packages from official repositories..."
+# Sudo keep-alive
+setup_sudo() {
+    log_substep "Setting up sudo access..."
     
-    if [ ! -f "$ARCH_PACKAGES_FILE" ]; then
-        log_error "$ARCH_PACKAGES_FILE not found."
-    fi
-
-    # Filter out already installed packages
-    mapfile -t packages < <(grep -vE '^\s*#|^\s*$' "$ARCH_PACKAGES_FILE")
-    packages_to_install=()
-    for pkg in "${packages[@]}"; do
-        if ! pacman -Q "$pkg" &> /dev/null; then
-            packages_to_install+=("$pkg")
-        else
-            log_info "Package '$pkg' is already installed. Skipping."
-        fi
-    done
-
-    if [ ${#packages_to_install[@]} -gt 0 ]; then
-        log_info "Attempting to install the following Arch packages: ${packages_to_install[*]}"
-        for pkg in "${packages_to_install[@]}"; do
-            log_info "Installing $pkg..."
-            sudo pacman -S --noconfirm --needed "$pkg" || log_warn "Failed to install $pkg. Continuing with other packages."
-        done
-    else
-        log_info "All Arch packages are already installed."
-    fi
-}
-
-run_install_yay_packages() {
-    log_info "Installing AUR packages with yay..."
-
-    if ! check_command yay; then
-        log_error "yay is not installed. Please install it first."
-    fi
-
-    if [ ! -f "$YAY_PACKAGES_FILE" ]; then
-        log_error "$YAY_PACKAGES_FILE not found."
-    fi
-
-    # Filter out already installed packages
-    mapfile -t packages < <(grep -vE '^\s*#|^\s*$' "$YAY_PACKAGES_FILE")
-    packages_to_install=()
-    for pkg in "${packages[@]}"; do
-        if ! yay -Q "$pkg" &> /dev/null; then
-            packages_to_install+=("$pkg")
-        else
-            log_info "Package '$pkg' is already installed. Skipping."
-        fi
-    done
-
-    if [ ${#packages_to_install[@]} -gt 0 ]; then
-        log_info "Installing the following AUR packages: ${packages_to_install[*]}"
-        yay -S --noconfirm --needed "${packages_to_install[@]}"
-    else
-        log_info "All AUR packages are already installed."
-    fi
-}
-
-run_install_dev_tools() {
-    log_info "Installing development tools..."
-    bash "$SCRIPTS_DIR/install_go_rust.sh"
-    bash "$SCRIPTS_DIR/install_bun.sh"
-    bash "$SCRIPTS_DIR/install_node.sh"
-    bash "$SCRIPTS_DIR/install_uv.sh"
-}
-
-run_install_dotfiles() {
-    log_info "Running dotfiles installation script..."
-    bash "$SCRIPTS_DIR/install_dotfiles.sh"
-}
-
-make_scripts_executable() {
-    log_info "Making scripts executable..."
-    find "$SCRIPTS_DIR" -type f -name "*.sh" -exec chmod +x {} \;
-}
-
-update_submodules() {
-    log_info "Initializing and updating Git submodules..."
-    git submodule update --init --recursive
-}
-
-# --- Main execution ---
-execute_installation() {
-    # Ask for the administrator password upfront and run a keep-alive
-    # to update the sudo timestamp until the script has finished.
+    # Ask for sudo password upfront
     sudo -v
-    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
-
-    log_info "Starting the installation process..."
-
-    update_submodules
-    make_scripts_executable
-    run_update_packages
-    run_install_yay
-    run_install_hardware_specific_packages
-    run_install_arch_packages
-    run_install_yay_packages
-    sudo pacman -S --noconfirm --needed unzip
-    run_install_dev_tools
-
-    run_install_tpm
-    log_info "Setting zsh as default shell for the current user..."
-    chsh -s $(which zsh)
-    run_install_ohmyzsh
-
-    run_install_themes
-    run_apply_themes
-
-    run_enable_services
-
-    bash "$SCRIPTS_DIR/sync-wallpapers.sh"
-    bash "$SCRIPTS_DIR/set-wallpaper.sh"
-
-    run_install_dotfiles
+    
+    # Keep sudo alive in background
+    while true; do
+        sudo -n true
+        sleep 60
+        kill -0 "$$" 2>/dev/null || exit
+    done &
 }
 
-# --- Main execution ---
-main() {
-    if execute_installation; then
-        log_info "Installation complete! Please reboot your system for all changes to take effect."
-    else
-        log_error "Installation failed. Please review the logs above and try again."
+# Initialize git submodules
+init_submodules() {
+    log_substep "Initializing git submodules..."
+    
+    if [[ -f "$BASE_DIR/.gitmodules" ]]; then
+        git -C "$BASE_DIR" submodule update --init --recursive || true
     fi
 }
 
-run_enable_services() {
-    log_info "Enabling and starting services..."
-    bash "$SCRIPTS_DIR/enable-services.sh"
+# Make scripts executable
+setup_permissions() {
+    log_substep "Setting script permissions..."
+    
+    find "$SCRIPTS_DIR" -type f -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+    find "$BASE_DIR/bin" -type f -name "dotfiles-*" -exec chmod +x {} \; 2>/dev/null || true
 }
 
-
-run_apply_themes() {
-    log_info "Applying themes..."
-    bash "$SCRIPTS_DIR/apply-theme.sh"
-}
-
-run_install_themes() {
-    log_info "Installing themes..."
-    bash "$SCRIPTS_DIR/install_graphite_theme.sh"
-    bash "$SCRIPTS_DIR/install_sddm_theme.sh"
-}
-
-
-run_install_ohmyzsh() {
-    log_info "Installing Oh My Zsh..."
-    if [ -d "$HOME/.oh-my-zsh" ]; then
-        log_info "Oh My Zsh is already installed."
-    else
-        # Ensure zsh is installed before attempting Oh My Zsh installation
-        if ! command -v zsh &> /dev/null; then
-            log_info "zsh not found, attempting to install zsh..."
-            sudo pacman -S --noconfirm --needed zsh || log_error "Failed to install zsh."
+# Hardware detection and confirmation
+detect_hardware() {
+    log_step "Detecting hardware..."
+    
+    # Run detection
+    run_detection
+    
+    # Show summary
+    show_detection_summary
+    
+    # Auto-set flags based on detection if not explicitly set
+    if [[ "$INSTALL_NVIDIA" == "false" ]] && [[ "$HAS_NVIDIA" == "true" ]]; then
+        if $AUTO_YES; then
+            INSTALL_NVIDIA=true
+        else
+            if ask_yes_no "Install NVIDIA drivers?" "y"; then
+                INSTALL_NVIDIA=true
+            fi
         fi
-        sh -c "$(curl -fsSL https://install.ohmyz.sh/)" "" --unattended
+    fi
+    
+    if [[ "$INSTALL_ASUS" == "false" ]] && [[ "$IS_ASUS" == "true" ]]; then
+        if $AUTO_YES; then
+            INSTALL_ASUS=true
+        else
+            if ask_yes_no "Install ASUS tools (asusctl, supergfxctl)?" "y"; then
+                INSTALL_ASUS=true
+            fi
+        fi
     fi
 }
 
+# Install development tools
+install_dev_tools() {
+    log_substep "Installing development tools..."
+    
+    local tools=(
+        "install_go_rust.sh"
+        "install_bun.sh"
+        "install_node.sh"
+        "install_uv.sh"
+    )
+    
+    for tool in "${tools[@]}"; do
+        local script="$SCRIPTS_DIR/$tool"
+        if [[ -x "$script" ]]; then
+            log_info "Running $tool..."
+            bash "$script" || log_warn "$tool had issues"
+        fi
+    done
+}
 
-run_install_tpm() {
-    log_info "Installing tmux plugin manager (tpm)..."
-    if [ -d "$HOME/.tmux/plugins/tpm" ]; then
-        log_info "tpm is already installed."
+# Install tmux plugin manager
+install_tpm() {
+    log_substep "Installing tmux plugin manager..."
+    
+    local tpm_dir="$HOME/.tmux/plugins/tpm"
+    
+    if [[ -d "$tpm_dir" ]]; then
+        log_list_item "ok" "tpm already installed"
     else
-        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+        if git clone https://github.com/tmux-plugins/tpm "$tpm_dir"; then
+            log_list_item "ok" "tpm installed"
+        else
+            log_list_item "fail" "tpm installation failed"
+        fi
     fi
-    log_info "To apply the changes, run 'tmux source ~/.tmux.conf' inside a tmux session."
 }
 
+# Install Oh My Zsh
+install_ohmyzsh() {
+    log_substep "Installing Oh My Zsh..."
+    
+    if [[ -d "$HOME/.oh-my-zsh" ]]; then
+        log_list_item "ok" "Oh My Zsh already installed"
+        return 0
+    fi
+    
+    # Ensure zsh is installed
+    if ! command -v zsh &>/dev/null; then
+        sudo pacman -S --noconfirm --needed zsh || {
+            log_list_item "fail" "Could not install zsh"
+            return 1
+        }
+    fi
+    
+    # Install Oh My Zsh
+    if sh -c "$(curl -fsSL https://install.ohmyz.sh/)" "" --unattended; then
+        log_list_item "ok" "Oh My Zsh installed"
+    else
+        log_list_item "fail" "Oh My Zsh installation failed"
+    fi
+}
 
-main
+# Set default shell to zsh
+set_default_shell() {
+    log_substep "Setting default shell to zsh..."
+    
+    if [[ "$SHELL" == *"zsh"* ]]; then
+        log_list_item "ok" "zsh already default shell"
+        return 0
+    fi
+    
+    local zsh_path
+    zsh_path=$(which zsh)
+    
+    if chsh -s "$zsh_path"; then
+        log_list_item "ok" "Default shell set to zsh"
+    else
+        log_warn "Could not change default shell"
+    fi
+}
+
+# Install themes
+install_themes() {
+    log_substep "Installing themes..."
+    
+    local theme_scripts=(
+        "install_graphite_theme.sh"
+        "install_sddm_theme.sh"
+    )
+    
+    for script in "${theme_scripts[@]}"; do
+        local path="$SCRIPTS_DIR/$script"
+        if [[ -x "$path" ]]; then
+            bash "$path" || log_warn "$script had issues"
+        fi
+    done
+    
+    # Apply themes
+    if [[ -x "$SCRIPTS_DIR/apply-theme.sh" ]]; then
+        bash "$SCRIPTS_DIR/apply-theme.sh" || true
+    fi
+}
+
+# Enable system services
+enable_services() {
+    log_substep "Enabling services..."
+    
+    if [[ -x "$SCRIPTS_DIR/enable-services.sh" ]]; then
+        bash "$SCRIPTS_DIR/enable-services.sh" || log_warn "Some services may have failed"
+    fi
+}
+
+# Setup wallpapers
+setup_wallpapers() {
+    log_substep "Setting up wallpapers..."
+    
+    [[ -x "$SCRIPTS_DIR/sync-wallpapers.sh" ]] && bash "$SCRIPTS_DIR/sync-wallpapers.sh" || true
+    [[ -x "$SCRIPTS_DIR/set-wallpaper.sh" ]] && bash "$SCRIPTS_DIR/set-wallpaper.sh" || true
+}
+
+# Install dotfiles (configs, scripts, etc.)
+install_dotfiles() {
+    log_substep "Installing dotfiles..."
+    
+    if [[ -x "$SCRIPTS_DIR/install_dotfiles.sh" ]]; then
+        bash "$SCRIPTS_DIR/install_dotfiles.sh"
+    else
+        log_error "install_dotfiles.sh not found"
+        return 1
+    fi
+}
+
+# Show post-install instructions
+show_post_install() {
+    echo ""
+    show_completion "Installation complete!"
+    
+    echo "Next steps:"
+    echo ""
+    echo "  1. Reboot your system:"
+    echo "     ${BOLD}sudo reboot${NC}"
+    echo ""
+    echo "  2. After reboot, reload tmux plugins:"
+    echo "     ${BOLD}tmux source ~/.tmux.conf${NC}"
+    echo "     Then press ${BOLD}prefix + I${NC} to install plugins"
+    echo ""
+    echo "  3. Check installation status:"
+    echo "     ${BOLD}dotfiles-version${NC}"
+    echo ""
+    echo "  4. Customize your setup:"
+    echo "     • Shell:    ~/.config/dotfiles/zsh/"
+    echo "     • Hyprland: ~/.config/hypr/local/"
+    echo ""
+    echo "  5. Update dotfiles:"
+    echo "     ${BOLD}dotfiles-update${NC}"
+    echo ""
+}
+
+# Main installation flow
+main() {
+    parse_args "$@"
+    
+    # Show banner
+    show_banner "Dotfiles Installer" "Arch Linux + Hyprland"
+    
+    # Dry run notice
+    if $DRY_RUN; then
+        log_warn "DRY RUN MODE - No changes will be made"
+        echo ""
+    fi
+    
+    # Initialize progress
+    init_progress 10
+    
+    # Step 1: Preflight checks
+    show_progress "Preflight checks"
+    if ! $SKIP_PREFLIGHT; then
+        if ! run_preflight; then
+            log_error "Preflight checks failed"
+            show_rollback_help "preflight"
+            exit 1
+        fi
+    else
+        log_info "Skipping preflight checks"
+    fi
+    
+    # Step 2: Setup
+    show_progress "Initial setup"
+    if ! $DRY_RUN; then
+        setup_sudo
+        init_submodules
+        setup_permissions
+    fi
+    
+    # Step 3: Hardware detection
+    show_progress "Hardware detection"
+    detect_hardware
+    
+    # Step 4: Package installation
+    show_progress "Installing packages"
+    if ! $SKIP_PACKAGES && ! $DRY_RUN; then
+        run_package_install "false" "$INSTALL_NVIDIA" "$INSTALL_ASUS"
+    else
+        log_info "Skipping package installation"
+    fi
+    
+    # Step 5: Development tools
+    show_progress "Development tools"
+    if ! $SKIP_DEV_TOOLS && ! $DRY_RUN; then
+        install_dev_tools
+    else
+        log_info "Skipping development tools"
+    fi
+    
+    # Step 6: Shell setup
+    show_progress "Shell setup"
+    if ! $DRY_RUN; then
+        install_tpm
+        install_ohmyzsh
+        set_default_shell
+    fi
+    
+    # Step 7: Themes
+    show_progress "Installing themes"
+    if ! $SKIP_THEMES && ! $DRY_RUN; then
+        install_themes
+    else
+        log_info "Skipping themes"
+    fi
+    
+    # Step 8: Services
+    show_progress "Enabling services"
+    if ! $DRY_RUN; then
+        enable_services
+    fi
+    
+    # Step 9: Wallpapers and dotfiles
+    show_progress "Installing dotfiles"
+    if ! $DRY_RUN; then
+        setup_wallpapers
+        install_dotfiles
+    fi
+    
+    # Step 10: Done!
+    show_progress "Finishing up"
+    
+    if $DRY_RUN; then
+        log_info "Dry run complete - no changes were made"
+    else
+        show_post_install
+    fi
+}
+
+# Run main
+main "$@"

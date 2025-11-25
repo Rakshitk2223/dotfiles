@@ -1,0 +1,6 @@
+# Protected paths - these files will be skipped during updates
+# Add any config files you've customized locally
+# Examples:
+# .config/hypr/monitors.conf
+# .config/waybar/config
+# .config/hypr/keybinds.conf
