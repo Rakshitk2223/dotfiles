@@ -24,7 +24,7 @@ init_progress() {
 # Show progress step
 show_progress() {
     local description="$1"
-    ((CURRENT_STEP++))
+    ((CURRENT_STEP++)) || true
     
     echo ""
     echo -e "${LOG_BOLD}${LOG_CYAN}[$CURRENT_STEP/$TOTAL_STEPS]${LOG_NC} ${LOG_BOLD}$description${LOG_NC}"
