@@ -61,6 +61,12 @@ install_lib() {
     local LIB_SOURCE="$REPO_ROOT/lib"
     local LIB_DEST="$HOME/.local/bin/dotfiles/lib"
     
+    # Skip if source and destination are the same (fresh install case)
+    if [[ "$(realpath "$LIB_SOURCE" 2>/dev/null)" == "$(realpath "$LIB_DEST" 2>/dev/null)" ]]; then
+        LOG "lib/ already in place (fresh install), skipping..."
+        return 0
+    fi
+    
     mkdir -p "$LIB_DEST"
     
     if [[ -d "$LIB_SOURCE" ]]; then
@@ -77,6 +83,12 @@ install_default_configs() {
     
     local DEFAULT_SOURCE="$REPO_ROOT/default"
     local DEFAULT_DEST="$HOME/.local/bin/dotfiles/default"
+    
+    # Skip if source and destination are the same (fresh install case)
+    if [[ "$(realpath "$DEFAULT_SOURCE" 2>/dev/null)" == "$(realpath "$DEFAULT_DEST" 2>/dev/null)" ]]; then
+        LOG "default/ already in place (fresh install), skipping..."
+        return 0
+    fi
     
     mkdir -p "$DEFAULT_DEST"
     
@@ -231,10 +243,10 @@ init_state() {
     LOG "Initializing state directory..."
     
     local STATE_DIR="$HOME/.local/state/dotfiles"
-    local MIGRATIONS_DIR="$STATE_DIR/migrations"
     
     mkdir -p "$STATE_DIR"
-    mkdir -p "$MIGRATIONS_DIR"
+    # Note: migrations are tracked as files in $STATE_DIR/migrations/ directory
+    # The lib/state.sh handles creating this directory structure
     
     LOG "State directory initialized"
 }
