@@ -1,0 +1,73 @@
+#!/bin/bash
+# First-run setup script for dotfiles
+# This runs once on first login after installation to apply GTK settings
+# that require a running desktop session (gsettings/dconf)
+
+set -euo pipefail
+
+FIRST_RUN_FLAG="$HOME/.local/state/dotfiles/first-run.mode"
+
+# Exit if not first run
+if [[ ! -f "$FIRST_RUN_FLAG" ]]; then
+    exit 0
+fi
+
+log_info() {
+    echo "[FIRST-RUN] $1"
+}
+
+apply_gtk_settings() {
+    log_info "Applying GTK settings..."
+    
+    # GTK Theme
+    gsettings set org.gnome.desktop.interface gtk-theme "Graphite-Dark"
+    
+    # Color scheme (prefer dark)
+    gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+    
+    # Icon theme
+    gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
+    
+    # Cursor theme
+    gsettings set org.gnome.desktop.interface cursor-theme "Bibata-Modern-Ice"
+    gsettings set org.gnome.desktop.interface cursor-size 20
+    
+    # Font
+    gsettings set org.gnome.desktop.interface font-name "Adwaita Sans 11"
+    
+    log_info "GTK settings applied"
+}
+
+update_icon_cache() {
+    log_info "Updating icon cache..."
+    
+    # Update icon caches if the themes exist
+    if [[ -d "/usr/share/icons/Papirus-Dark" ]]; then
+        sudo gtk-update-icon-cache -f /usr/share/icons/Papirus-Dark 2>/dev/null || true
+    fi
+    
+    if [[ -d "$HOME/.local/share/icons/Bibata-Modern-Ice" ]]; then
+        gtk-update-icon-cache -f "$HOME/.local/share/icons/Bibata-Modern-Ice" 2>/dev/null || true
+    fi
+    
+    log_info "Icon cache updated"
+}
+
+main() {
+    log_info "Running first-time setup..."
+    
+    apply_gtk_settings
+    update_icon_cache
+    
+    # Remove the flag so this only runs once
+    rm -f "$FIRST_RUN_FLAG"
+    
+    log_info "First-run setup complete!"
+    
+    # Send notification if dunst is running
+    if command -v notify-send &>/dev/null; then
+        notify-send "Dotfiles" "First-run setup complete. GTK theme applied." --icon=preferences-desktop-theme
+    fi
+}
+
+main

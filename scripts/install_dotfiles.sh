@@ -149,6 +149,14 @@ EOF
     log_info "User config directories ready."
 }
 
+create_first_run_flag() {
+    log_info "Creating first-run flag for GTK setup..."
+    local STATE_DIR="$HOME/.local/state/dotfiles"
+    mkdir -p "$STATE_DIR"
+    touch "$STATE_DIR/first-run.mode"
+    log_info "First-run flag created. GTK settings will be applied on first login."
+}
+
 setup_hypr_local_dir() {
     log_info "Setting up Hyprland local config directory..."
     local HYPR_LOCAL="$HOME/.config/hypr/local"
@@ -301,6 +309,11 @@ main() {
     install_legacy_scripts
     setup_user_config_dirs
     setup_hypr_local_dir
+    
+    # Create first-run flag for GTK settings (only on fresh install)
+    if ! $is_upgrade; then
+        create_first_run_flag
+    fi
     
     # Record installation state
     log_info "Recording installation state..."
