@@ -152,11 +152,98 @@ EOF
 setup_hypr_local_dir() {
     log_info "Setting up Hyprland local config directory..."
     local HYPR_LOCAL="$HOME/.config/hypr/local"
+    local HYPR_DIR="$HOME/.config/hypr"
     
     # Create local directory for user overrides
     mkdir -p "$HYPR_LOCAL"
     
-    # Create example local config if it doesn't exist
+    # Detect NVIDIA GPU
+    local has_nvidia=false
+    if command -v lspci &>/dev/null; then
+        if lspci | grep -qi "nvidia"; then
+            has_nvidia=true
+            log_info "NVIDIA GPU detected"
+        fi
+    fi
+    
+    # Create hardware-specific config files if they don't exist
+    # These are machine-specific and sourced by hyprland.conf
+    if [[ ! -f "$HYPR_DIR/monitors.conf" ]]; then
+        cat > "$HYPR_DIR/monitors.conf" << 'EOF'
+# Monitor Configuration
+# =====================
+# Configure your monitors here.
+# Run 'hyprctl monitors' to see available monitors.
+#
+# Format: monitor = name, resolution@rate, position, scale
+# Example:
+# monitor = DP-1, 1920x1080@144, 0x0, 1
+# monitor = HDMI-A-1, 1920x1080@60, 1920x0, 1
+#
+# For automatic configuration:
+monitor = , preferred, auto, 1
+EOF
+        log_info "Created monitors.conf template"
+    fi
+    
+    if [[ ! -f "$HYPR_DIR/nvidia.conf" ]]; then
+        if [[ "$has_nvidia" == "true" ]]; then
+            # NVIDIA detected - create config with settings ENABLED
+            cat > "$HYPR_DIR/nvidia.conf" << 'EOF'
+# NVIDIA Configuration
+# ====================
+# NVIDIA GPU detected - settings enabled automatically
+
+env = LIBVA_DRIVER_NAME,nvidia
+env = XDG_SESSION_TYPE,wayland
+env = GBM_BACKEND,nvidia-drm
+env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+
+cursor {
+    no_hardware_cursors = true
+}
+EOF
+            log_info "Created nvidia.conf with NVIDIA settings ENABLED"
+        else
+            # No NVIDIA - create template with settings commented
+            cat > "$HYPR_DIR/nvidia.conf" << 'EOF'
+# NVIDIA Configuration
+# ====================
+# Uncomment the following lines if you have an NVIDIA GPU:
+#
+# env = LIBVA_DRIVER_NAME,nvidia
+# env = XDG_SESSION_TYPE,wayland
+# env = GBM_BACKEND,nvidia-drm
+# env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+#
+# cursor {
+#     no_hardware_cursors = true
+# }
+EOF
+            log_info "Created nvidia.conf template (no NVIDIA detected)"
+        fi
+    fi
+    
+    # Create empty placeholder files for all local configs
+    # These are needed because Hyprland's source directive fails on missing files
+    local local_configs=(
+        "programs.conf"
+        "keybinds.conf"
+        "appearance.conf"
+        "autostart.conf"
+        "environment.conf"
+        "input.conf"
+        "layout.conf"
+        "windowrules.conf"
+    )
+    
+    for conf in "${local_configs[@]}"; do
+        if [[ ! -f "$HYPR_LOCAL/$conf" ]]; then
+            echo "# Local $conf - Add your overrides here" > "$HYPR_LOCAL/$conf"
+        fi
+    done
+    
+    # Create example custom.conf with documentation if it doesn't exist
     if [[ ! -f "$HYPR_LOCAL/custom.conf" ]]; then
         cat > "$HYPR_LOCAL/custom.conf" << 'EOF'
 # Hyprland Local Customizations
@@ -164,7 +251,7 @@ setup_hypr_local_dir() {
 # Add your personal Hyprland settings here.
 # These settings override the core defaults and survive updates.
 #
-# You can also create these files to override specific configs:
+# Available override files (already created as empty placeholders):
 #   programs.conf     - Override $terminal, $menu, $browser, etc.
 #   keybinds.conf     - Add or override keybindings
 #   appearance.conf   - Custom colors, borders, gaps, animations
