@@ -1,0 +1,8 @@
+/* Monochrome Theme - Waybar Colors */
+@define-color foreground #e0e0e0;
+@define-color background #121212;
+@define-color background-alt #1e1e1e;
+@define-color accent #808080;
+@define-color warning #b0b0b0;
+@define-color error #707070;
+@define-color success #909090;

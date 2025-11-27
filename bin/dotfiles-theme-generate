@@ -1,0 +1,132 @@
+#!/bin/bash
+# dotfiles-theme-generate - Generate theme from current wallpaper using wallust
+# Usage: dotfiles-theme-generate
+
+set -euo pipefail
+
+DOTFILES_DIR="$HOME/.local/bin/dotfiles"
+GENERATED_THEME_DIR="$DOTFILES_DIR/themes/wallpaper"
+
+# Source logging helpers if available
+if [[ -f "$DOTFILES_DIR/scripts/helpers/logging.sh" ]]; then
+    source "$DOTFILES_DIR/scripts/helpers/logging.sh"
+else
+    log_info() { echo "[INFO] $*"; }
+    log_warn() { echo "[WARN] $*"; }
+    log_error() { echo "[ERROR] $*" >&2; }
+fi
+
+# Check wallust is installed
+if ! command -v wallust &>/dev/null; then
+    log_error "wallust is not installed. Install with: yay -S wallust"
+    exit 1
+fi
+
+# Get current wallpaper
+get_current_wallpaper() {
+    if [[ -L "$HOME/.cache/current_wallpaper" ]]; then
+        readlink -f "$HOME/.cache/current_wallpaper"
+    elif command -v swww &>/dev/null; then
+        swww query 2>/dev/null | grep -oP 'image: \K.*' | head -1
+    else
+        echo ""
+    fi
+}
+
+WALLPAPER=$(get_current_wallpaper)
+
+if [[ -z "$WALLPAPER" || ! -f "$WALLPAPER" ]]; then
+    log_error "Could not determine current wallpaper"
+    exit 1
+fi
+
+log_info "Generating colors from: $(basename "$WALLPAPER")"
+
+# Run wallust to generate colors
+wallust run "$WALLPAPER" --skip-sequences --quiet 2>/dev/null
+
+# Find the cached colors (wallust uses a hash-based cache)
+CACHE_DIR="$HOME/.cache/wallust"
+COLORS_FILE=$(find "$CACHE_DIR" -name "*_Dark" -type f 2>/dev/null | head -1)
+
+if [[ -z "$COLORS_FILE" || ! -f "$COLORS_FILE" ]]; then
+    log_error "Could not find generated colors"
+    exit 1
+fi
+
+# Parse colors from JSON
+background=$(jq -r '.background' "$COLORS_FILE")
+foreground=$(jq -r '.foreground' "$COLORS_FILE")
+color0=$(jq -r '.color0' "$COLORS_FILE")  # Black (dark)
+color1=$(jq -r '.color1' "$COLORS_FILE")  # Red
+color2=$(jq -r '.color2' "$COLORS_FILE")  # Green
+color3=$(jq -r '.color3' "$COLORS_FILE")  # Yellow
+color4=$(jq -r '.color4' "$COLORS_FILE")  # Blue
+color5=$(jq -r '.color5' "$COLORS_FILE")  # Magenta
+color6=$(jq -r '.color6' "$COLORS_FILE")  # Cyan
+color7=$(jq -r '.color7' "$COLORS_FILE")  # White
+
+# Create theme directory
+mkdir -p "$GENERATED_THEME_DIR"
+
+log_info "Creating wallpaper theme..."
+
+# Generate waybar.css
+cat > "$GENERATED_THEME_DIR/waybar.css" << EOF
+/* Wallpaper Theme - Generated from $(basename "$WALLPAPER") */
+@define-color foreground ${foreground};
+@define-color background ${background};
+@define-color background-alt ${color0};
+@define-color accent ${color4};
+@define-color warning ${color3};
+@define-color error ${color1};
+@define-color success ${color2};
+EOF
+
+# Generate wofi.css
+cat > "$GENERATED_THEME_DIR/wofi.css" << EOF
+/* Wallpaper Theme - Generated from $(basename "$WALLPAPER") */
+@define-color bg ${background};
+@define-color fg ${foreground};
+@define-color border ${color0};
+@define-color selection ${color0};
+@define-color accent ${color4};
+EOF
+
+# Generate dunst.conf
+cat > "$GENERATED_THEME_DIR/dunst.conf" << EOF
+# Wallpaper Theme - Generated from $(basename "$WALLPAPER")
+# These values are used by dotfiles-theme to generate dunstrc
+
+frame_color = "${color0}"
+foreground = "${foreground}"
+background = "${background}"
+highlight = "${foreground}"
+EOF
+
+# Generate hyprland.conf - use a subtle accent color
+# Convert hex to rgb format for hyprland
+accent_rgb=$(echo "$color4" | sed 's/#//')
+cat > "$GENERATED_THEME_DIR/hyprland.conf" << EOF
+# Wallpaper Theme - Generated from $(basename "$WALLPAPER")
+\$themeAccent = rgb(${accent_rgb})
+\$themeForeground = rgb($(echo "$foreground" | sed 's/#//'))
+\$themeBackground = rgb($(echo "$background" | sed 's/#//'))
+
+general {
+    col.active_border = rgba(${accent_rgb}cc)
+}
+
+group {
+    col.border_active = rgba(${accent_rgb}cc)
+}
+EOF
+
+log_info "Wallpaper theme generated successfully"
+echo ""
+echo "Colors extracted:"
+echo "  Background: $background"
+echo "  Foreground: $foreground"
+echo "  Accent:     $color4"
+echo ""
+echo "To apply: dotfiles-theme set wallpaper"

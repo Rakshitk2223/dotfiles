@@ -1,0 +1,8 @@
+/* Gruvbox Theme - Waybar Colors */
+@define-color foreground #ebdbb2;
+@define-color background #282828;
+@define-color background-alt #3c3836;
+@define-color accent #83a598;
+@define-color warning #fabd2f;
+@define-color error #fb4934;
+@define-color success #b8bb26;

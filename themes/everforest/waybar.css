@@ -1,0 +1,8 @@
+/* Everforest Theme - Waybar Colors */
+@define-color foreground #d3c6aa;
+@define-color background #272e33;
+@define-color background-alt #2e383c;
+@define-color accent #a7c080;
+@define-color warning #dbbc7f;
+@define-color error #e67e80;
+@define-color success #a7c080;

@@ -90,6 +90,59 @@ install_lib() {
     fi
 }
 
+install_themes() {
+    log_info "Installing themes..."
+    local THEMES_SOURCE="$REPO_ROOT/themes"
+    local THEMES_DEST="$HOME/.local/bin/dotfiles/themes"
+    
+    mkdir -p "$THEMES_DEST"
+    
+    if [[ -d "$THEMES_SOURCE" ]]; then
+        rsync -avh "$THEMES_SOURCE/" "$THEMES_DEST/"
+        log_info "Themes installed."
+    fi
+}
+
+install_wallpapers() {
+    log_info "Installing wallpapers..."
+    local WALLPAPERS_SOURCE="$REPO_ROOT/Wallpapers"
+    local WALLPAPERS_DEST="$HOME/.local/bin/dotfiles/Wallpapers"
+    
+    mkdir -p "$WALLPAPERS_DEST"
+    
+    if [[ -d "$WALLPAPERS_SOURCE" ]]; then
+        rsync -avh "$WALLPAPERS_SOURCE/" "$WALLPAPERS_DEST/"
+        log_info "Wallpapers installed."
+    fi
+}
+
+setup_default_theme() {
+    log_info "Setting up default theme..."
+    local THEMES_DIR="$HOME/.local/bin/dotfiles/themes"
+    local DEFAULT_THEME="tokyo-night"
+    
+    # Only set default theme on fresh install (no current symlink)
+    if [[ ! -L "$THEMES_DIR/current" ]]; then
+        if [[ -d "$THEMES_DIR/$DEFAULT_THEME" ]]; then
+            ln -snf "$THEMES_DIR/$DEFAULT_THEME" "$THEMES_DIR/current"
+            log_info "Default theme set to: $DEFAULT_THEME"
+            
+            # Apply default wallpaper
+            local WALLPAPERS_DIR="$HOME/.local/bin/dotfiles/Wallpapers"
+            local wallpaper
+            wallpaper=$(find "$WALLPAPERS_DIR/$DEFAULT_THEME" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | sort | head -1)
+            
+            if [[ -n "$wallpaper" && -f "$wallpaper" ]]; then
+                mkdir -p "$HOME/.cache"
+                ln -snf "$wallpaper" "$HOME/.cache/current_wallpaper"
+                log_info "Default wallpaper set: $(basename "$wallpaper")"
+            fi
+        fi
+    else
+        log_info "Theme already configured, skipping default setup."
+    fi
+}
+
 install_legacy_scripts() {
     # Keep legacy scripts for backwards compatibility during transition
     log_info "Installing legacy scripts to ~/.local/bin/scripts..."
@@ -307,8 +360,11 @@ main() {
     install_home_dotfiles
     install_default_configs
     install_legacy_scripts
+    install_themes
+    install_wallpapers
     setup_user_config_dirs
     setup_hypr_local_dir
+    setup_default_theme
     
     # Create first-run flag for GTK settings (only on fresh install)
     if ! $is_upgrade; then

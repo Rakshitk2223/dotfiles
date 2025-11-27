@@ -1,0 +1,252 @@
+#!/bin/bash
+# dotfiles-theme - Theme management for dotfiles
+# Usage: dotfiles-theme <command> [args]
+
+set -euo pipefail
+
+DOTFILES_DIR="$HOME/.local/bin/dotfiles"
+BUNDLED_THEMES_DIR="$DOTFILES_DIR/themes"
+USER_THEMES_DIR="$HOME/.config/dotfiles/themes"
+CURRENT_THEME_LINK="$BUNDLED_THEMES_DIR/current"
+WALLPAPERS_DIR="$DOTFILES_DIR/Wallpapers"
+CURRENT_WALLPAPER_LINK="$HOME/.cache/current_wallpaper"
+
+# Source logging helpers if available
+if [[ -f "$DOTFILES_DIR/scripts/helpers/logging.sh" ]]; then
+    source "$DOTFILES_DIR/scripts/helpers/logging.sh"
+else
+    log_info() { echo "[INFO] $*"; }
+    log_warn() { echo "[WARN] $*"; }
+    log_error() { echo "[ERROR] $*" >&2; }
+fi
+
+# Get current theme name
+get_current_theme() {
+    if [[ -L "$CURRENT_THEME_LINK" ]]; then
+        basename "$(readlink -f "$CURRENT_THEME_LINK")"
+    else
+        echo "none"
+    fi
+}
+
+# List all available themes (bundled + user)
+list_themes() {
+    local themes=()
+    
+    # Bundled themes
+    if [[ -d "$BUNDLED_THEMES_DIR" ]]; then
+        for theme in "$BUNDLED_THEMES_DIR"/*/; do
+            local name
+            name=$(basename "$theme")
+            # Exclude current symlink and wallpaper theme (it's auto-generated)
+            [[ -d "$theme" && "$name" != "current" && "$name" != "wallpaper" ]] && themes+=("$name")
+        done
+    fi
+    
+    # User themes
+    if [[ -d "$USER_THEMES_DIR" ]]; then
+        for theme in "$USER_THEMES_DIR"/*/; do
+            [[ -d "$theme" ]] && themes+=("$(basename "$theme")")
+        done
+    fi
+    
+    # Remove duplicates and sort
+    printf '%s\n' "${themes[@]}" | sort -u
+}
+
+# Get theme path (checks both bundled and user dirs)
+get_theme_path() {
+    local theme_name="$1"
+    
+    if [[ -d "$BUNDLED_THEMES_DIR/$theme_name" ]]; then
+        echo "$BUNDLED_THEMES_DIR/$theme_name"
+    elif [[ -d "$USER_THEMES_DIR/$theme_name" ]]; then
+        echo "$USER_THEMES_DIR/$theme_name"
+    else
+        echo ""
+    fi
+}
+
+# Set wallpaper using swww
+set_wallpaper() {
+    local wallpaper_path="$1"
+    
+    if [[ ! -f "$wallpaper_path" ]]; then
+        log_warn "Wallpaper not found: $wallpaper_path"
+        return 1
+    fi
+    
+    # Ensure swww daemon is running
+    if ! pgrep -x swww-daemon &>/dev/null; then
+        swww-daemon &
+        disown
+        sleep 0.5
+    fi
+    
+    # Set wallpaper with transition
+    if command -v swww &>/dev/null; then
+        swww img "$wallpaper_path" --transition-type fade --transition-duration 1
+        # Update current wallpaper symlink
+        ln -snf "$wallpaper_path" "$CURRENT_WALLPAPER_LINK"
+        log_info "Wallpaper set: $(basename "$wallpaper_path")"
+    else
+        log_warn "swww not found, skipping wallpaper"
+    fi
+}
+
+# Apply theme wallpaper (first wallpaper in theme's folder)
+apply_theme_wallpaper() {
+    local theme_name="$1"
+    local theme_wallpaper_dir="$WALLPAPERS_DIR/$theme_name"
+    local shared_wallpaper_dir="$WALLPAPERS_DIR/shared"
+    local wallpaper_dir=""
+    
+    # Check theme-specific folder first, then shared
+    if [[ -d "$theme_wallpaper_dir" ]] && [[ -n "$(ls -A "$theme_wallpaper_dir" 2>/dev/null)" ]]; then
+        wallpaper_dir="$theme_wallpaper_dir"
+    elif [[ -d "$shared_wallpaper_dir" ]] && [[ -n "$(ls -A "$shared_wallpaper_dir" 2>/dev/null)" ]]; then
+        wallpaper_dir="$shared_wallpaper_dir"
+    fi
+    
+    if [[ -z "$wallpaper_dir" ]]; then
+        log_warn "No wallpapers found for theme '$theme_name'"
+        return 1
+    fi
+    
+    # Get first wallpaper (sorted alphabetically)
+    local first_wallpaper
+    first_wallpaper=$(find "$wallpaper_dir" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" -o -iname "*.gif" \) | sort | head -1)
+    
+    if [[ -n "$first_wallpaper" ]]; then
+        set_wallpaper "$first_wallpaper"
+    else
+        log_warn "No valid wallpaper images found in $wallpaper_dir"
+    fi
+}
+
+# Apply dunst theme colors
+apply_dunst_theme() {
+    local theme_path="$1"
+    local dunst_theme="$theme_path/dunst.conf"
+    local dunstrc="$HOME/.config/dunst/dunstrc"
+    
+    if [[ ! -f "$dunst_theme" ]]; then
+        log_warn "No dunst.conf found in theme"
+        return
+    fi
+    
+    # Read colors from theme
+    local frame_color foreground background highlight
+    frame_color=$(grep "^frame_color" "$dunst_theme" | cut -d'"' -f2)
+    foreground=$(grep "^foreground" "$dunst_theme" | cut -d'"' -f2)
+    background=$(grep "^background" "$dunst_theme" | cut -d'"' -f2)
+    highlight=$(grep "^highlight" "$dunst_theme" | cut -d'"' -f2)
+    
+    # Apply to dunstrc using sed
+    if [[ -f "$dunstrc" ]]; then
+        sed -i "s/frame_color = \"#[^\"]*\"/frame_color = \"$frame_color\"/g" "$dunstrc"
+        sed -i "s/foreground = \"#[^\"]*\"/foreground = \"$foreground\"/g" "$dunstrc"
+        sed -i "s/background = \"#[^\"]*\"/background = \"$background\"/g" "$dunstrc"
+        sed -i "s/highlight = \"#[^\"]*\"/highlight = \"$highlight\"/g" "$dunstrc"
+    fi
+}
+
+# Set theme
+set_theme() {
+    local theme_name="$1"
+    local theme_path
+    
+    theme_path=$(get_theme_path "$theme_name")
+    
+    if [[ -z "$theme_path" ]]; then
+        log_error "Theme '$theme_name' not found"
+        echo "Available themes:"
+        list_themes
+        exit 1
+    fi
+    
+    log_info "Setting theme to: $theme_name"
+    
+    # Update theme symlink
+    ln -snf "$theme_path" "$CURRENT_THEME_LINK"
+    
+    # Apply dunst colors
+    apply_dunst_theme "$theme_path"
+    
+    # Apply theme wallpaper (skip for wallpaper theme - it uses current wallpaper)
+    if [[ "$theme_name" != "wallpaper" ]]; then
+        apply_theme_wallpaper "$theme_name"
+    fi
+    
+    # Reload applications
+    log_info "Reloading applications..."
+    
+    # Reload hyprland
+    if command -v hyprctl &>/dev/null; then
+        hyprctl reload &>/dev/null || true
+    fi
+    
+    # Reload waybar
+    if pgrep -x waybar &>/dev/null; then
+        killall -SIGUSR2 waybar 2>/dev/null || true
+    fi
+    
+    # Reload dunst
+    if pgrep -x dunst &>/dev/null; then
+        killall dunst 2>/dev/null || true
+        dunst &>/dev/null &
+        disown
+    fi
+    
+    # Send notification
+    if command -v notify-send &>/dev/null; then
+        notify-send "Theme" "Switched to $theme_name" -t 2000
+    fi
+    
+    log_info "Theme '$theme_name' applied successfully"
+}
+
+# Show usage
+usage() {
+    cat <<EOF
+Usage: dotfiles-theme <command> [args]
+
+Commands:
+    set <name>      Set the active theme (changes wallpaper too)
+    list            List available themes
+    current         Show current theme name
+    help            Show this help message
+
+Examples:
+    dotfiles-theme set kanagawa
+    dotfiles-theme set tokyo-night
+    dotfiles-theme list
+    dotfiles-theme current
+EOF
+}
+
+# Main
+case "${1:-help}" in
+    set)
+        if [[ -z "${2:-}" ]]; then
+            log_error "Theme name required"
+            usage
+            exit 1
+        fi
+        set_theme "$2"
+        ;;
+    list)
+        list_themes
+        ;;
+    current)
+        get_current_theme
+        ;;
+    help|--help|-h)
+        usage
+        ;;
+    *)
+        log_error "Unknown command: $1"
+        usage
+        exit 1
+        ;;
+esac

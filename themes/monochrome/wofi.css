@@ -1,0 +1,6 @@
+/* Monochrome Theme - Wofi Colors */
+@define-color bg #121212;
+@define-color fg #e0e0e0;
+@define-color border #2a2a2a;
+@define-color selection #1e1e1e;
+@define-color accent #808080;

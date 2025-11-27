@@ -1,0 +1,8 @@
+/* Kanagawa Theme - Waybar Colors */
+@define-color foreground #dcd7ba;
+@define-color background #1f1f28;
+@define-color background-alt #2a2a37;
+@define-color accent #7e9cd8;
+@define-color warning #e6c384;
+@define-color error #c34043;
+@define-color success #98bb6c;

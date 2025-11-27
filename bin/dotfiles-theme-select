@@ -1,0 +1,65 @@
+#!/bin/bash
+# dotfiles-theme-select - Theme manager with wofi
+# Select themes or generate from wallpaper
+
+set -euo pipefail
+
+DOTFILES_DIR="$HOME/.local/bin/dotfiles"
+
+# Show main menu
+show_main_menu() {
+    printf '%s\n' \
+        "󰏘  Select Theme" \
+        "󰓅  Generate from Wallpaper" | wofi --dmenu --prompt "Theme Manager" --cache-file /dev/null 2>/dev/null
+}
+
+# Show theme selection menu
+show_theme_menu() {
+    local current
+    current=$("$HOME/.local/bin/dotfiles-theme" current 2>/dev/null || echo "")
+    
+    "$HOME/.local/bin/dotfiles-theme" list 2>/dev/null | while read -r theme; do
+        if [[ -n "$theme" ]]; then
+            if [[ "$theme" == "$current" ]]; then
+                echo "  $theme (current)"
+            else
+                echo "  $theme"
+            fi
+        fi
+    done | wofi --dmenu --prompt "Select Theme" --cache-file /dev/null 2>/dev/null
+}
+
+# Main logic
+main() {
+    local choice
+    choice=$(show_main_menu)
+    
+    [[ -z "$choice" ]] && exit 0
+    
+    case "$choice" in
+        *"Select Theme"*)
+            local selected
+            selected=$(show_theme_menu)
+            [[ -z "$selected" ]] && exit 0
+            
+            # Extract theme name
+            local theme_name
+            theme_name=$(echo "$selected" | sed 's/^\s*//' | sed 's/ (current)$//')
+            
+            if [[ -n "$theme_name" ]]; then
+                "$HOME/.local/bin/dotfiles-theme" set "$theme_name"
+            fi
+            ;;
+            
+        *"Generate from Wallpaper"*)
+            notify-send "Theme" "Generating colors from wallpaper..." -t 2000
+            if "$HOME/.local/bin/dotfiles-theme-generate"; then
+                "$HOME/.local/bin/dotfiles-theme" set wallpaper
+            else
+                notify-send "Theme" "Failed to generate colors" -t 3000
+            fi
+            ;;
+    esac
+}
+
+main
