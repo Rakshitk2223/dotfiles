@@ -43,6 +43,14 @@ main() {
         log_info "supergfxd.service not found, skipping."
     fi
 
+    # Conditionally enable auto-cpufreq for power management
+    if systemctl list-unit-files | grep -q '^auto-cpufreq.service'; then
+        log_info "Enabling and starting auto-cpufreq.service..."
+        sudo systemctl enable --now "auto-cpufreq.service"
+    else
+        log_info "auto-cpufreq.service not found, skipping."
+    fi
+
     log_info "All essential services have been enabled and started."
 }
 
