@@ -199,6 +199,12 @@ window#waybar {
   border-radius: 8px;
   transition: all 0.3s ease;
 }
+#taskbar.empty {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
 #taskbar button {
   padding: 0px 2px;
   margin: 0 2px;
