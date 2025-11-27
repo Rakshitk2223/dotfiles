@@ -27,12 +27,20 @@ window#waybar {
 #pulseaudio#microphone,
 #battery,
 #cpu,
-#memory,
-#tray {
+#memory {
   background-color: transparent;
   padding: 2px 2px;
   margin: 2px 2px;
   border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+/* Tray container - single background for all icons */
+#tray {
+  background-color: rgba(60, 60, 70, 0.4);
+  padding: 2px 6px;
+  margin: 3px 3px;
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
@@ -42,19 +50,15 @@ window#waybar {
 
 #tray > .needs-attention {
   -gtk-icon-effect: highlight;
-  background-color: rgba(235, 203, 139, 0.1);
-  border-radius: 3px;
 }
 
-#tray > .active {
-  background-color: rgba(148, 226, 213, 0.1);
-  border-radius: 3px;
-  padding: 4px;
-}
 #workspaces button {
   color: #fefae0;
   background-color: transparent;
-  padding: 0 5px;
+  padding: 0 4px;
+  font-size: 11px;
+  min-width: 14px;
+  min-height: 14px;
 }
 #workspaces button.active {
   background-color: transparent;
@@ -64,7 +68,7 @@ window#waybar {
 #workspaces button:hover {
   background: #1e1e2e;
   color: #89b4fa;
-  border-radius: 17px;
+  border-radius: 5px;
 }
 #tasks button {
   padding: 2px;
@@ -80,36 +84,31 @@ window#waybar {
 }
 #battery {
   color: #94e2d5;
-  background-color: rgba(148, 226, 213, 0.1); /* Subtle cyan background */
-  border-radius: 5px;
-  padding: 2px 8px;
-  /* margin: 3px 5px; */
+  background-color: rgba(60, 60, 70, 0.4);
+  border-radius: 8px;
+  padding: 2px 6px;
+  margin: 3px 3px;
   transition: all 0.3s ease;
 }
 
 #battery:hover {
-  background-color: rgba(148, 226, 213, 0.2);
-  box-shadow: 0 0 5px rgba(148, 226, 213, 0.4);
+  background-color: rgba(80, 80, 90, 0.5);
 }
 
 #battery.warning {
   color: #ebcb8b;
-  background-color: rgba(235, 203, 139, 0.1);
 }
 
 #battery.warning:hover {
-  background-color: rgba(235, 203, 139, 0.2);
-  box-shadow: 0 0 5px rgba(235, 203, 139, 0.4);
+  background-color: rgba(80, 80, 90, 0.5);
 }
 
 #battery.critical {
   color: #bf616a;
-  background-color: rgba(191, 97, 106, 0.1);
 }
 
 #battery.critical:hover {
-  background-color: rgba(191, 97, 106, 0.2);
-  box-shadow: 0 0 5px rgba(191, 97, 106, 0.4);
+  background-color: rgba(80, 80, 90, 0.5);
 }
 #network.disconnected {
   color: #bf616a;
@@ -118,27 +117,18 @@ window#waybar {
 /* Enhanced PulseAudio Styling */
 #pulseaudio {
   color: #a3be8c; /* Green when unmuted */
-  background-color: rgba(163, 190, 140, 0.1); /* Subtle green background */
-  border-radius: 5px;
-  padding: 2px 8px;
-  margin: 3px 5px;
+  background-color: transparent;
+  padding: 2px 6px;
+  margin: 0;
   transition: all 0.3s ease;
 }
 
 #pulseaudio.muted {
   color: #bf616a; /* Red when muted */
-  background-color: rgba(191, 97, 106, 0.1); /* Subtle red background */
-  box-shadow: 0 0 3px rgba(191, 97, 106, 0.3); /* Subtle red glow */
 }
 
 #pulseaudio:hover {
-  background-color: rgba(163, 190, 140, 0.2);
-  box-shadow: 0 0 5px rgba(163, 190, 140, 0.4);
-}
-
-#pulseaudio.muted:hover {
-  background-color: rgba(191, 97, 106, 0.2);
-  box-shadow: 0 0 5px rgba(191, 97, 106, 0.4);
+  opacity: 0.8;
 }
 
 /* Alternative color scheme - uncomment to use
@@ -156,22 +146,30 @@ window#waybar {
 /* Custom microphone module styles */
 #custom-microphone {
   background-color: transparent;
-  padding: 2px 3px;
-  margin: 3px 5px;
-  border-radius: 5px;
+  padding: 2px 6px;
+  margin: 0;
   transition: all 0.3s ease;
   color: #a3be8c; /* Default green when active */
 }
 #custom-microphone.muted {
   color: #bf616a; /* Red when muted */
-  background-color: rgba(191, 97, 106, 0.1); /* Subtle red background */
 }
 #custom-microphone.active {
   color: #a3be8c; /* Green when active */
-  box-shadow: 0 0 3px rgba(163, 190, 140, 0.3); /* Subtle glow */
 }
 #custom-microphone.error {
   color: #ebcb8b; /* Yellow for error state */
+}
+
+/* Audio group container - mic + pulseaudio */
+#group-audio,
+#audio,
+.audio {
+  background-color: rgba(60, 60, 70, 0.4);
+  padding: 2px 6px;
+  margin: 3px 3px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
 /* Custom updates module styles */
@@ -195,22 +193,26 @@ window#waybar {
   background-color: #bf616a;
 }
 #taskbar {
-  background-color: transparent;
-  padding: 2px 3px;
-  margin: 3px 2px;
-  border-radius: 5px;
+  background-color: rgba(60, 60, 70, 0.4);
+  padding: 2px 6px;
+  margin: 3px 3px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 #taskbar button {
-  padding: 2px;
-  margin: 0 3px;
+  padding: 0px 2px;
+  margin: 0 2px;
   background-color: transparent;
-  border-radius: 5px;
+  border-radius: 4px;
+  min-width: 14px;
+  min-height: 14px;
 }
 #taskbar button.active {
-  background-color: #4c566a;
+  background-color: rgba(100, 100, 110, 0.5);
+  padding: 0px 2px;
 }
 #taskbar button:hover {
-  background-color: #45475a;
+  background-color: rgba(80, 80, 90, 0.5);
 }
 tooltip {
   background: #12121e;

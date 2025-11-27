@@ -8,13 +8,12 @@
 		"wlr/taskbar"
 	],
 	"modules-center": [
-		"clock"
+		"clock",
+		"custom/updates"
 	],
 	"modules-right": [
-		"custom/updates",
 		"tray",
-		"custom/microphone",
-		"pulseaudio",
+		"group/audio",
 		"battery"
 	],
 	"hyprland/workspaces": {
@@ -40,8 +39,8 @@
 		}
 	},
 	"clock": {
-		"format": "{:%A %H:%M}",
-		"format-alt": "{:%d %B W%V %Y}",
+		"format": "{:L%A %H:%M}",
+		"format-alt": "{:L%d %B W%V %Y}",
 		"tooltip": false
 	},
 	"tray": {
@@ -120,17 +119,21 @@
 	},
 	"wlr/taskbar": {
 		"format": "{icon}",
-		"icon-size": 18,
+		"icon-size": 14,
 		"all-outputs": true,
 		"on-click": "activate",
 		"on-click-middle": "close"
 	},
 	"custom/updates": {
-		"format": " {}",
-		"return-type": "json",
+		"format": "{}",
 		"exec": "~/.config/waybar/scripts/updates.sh",
 		"interval": 3600,
 		"on-click": "foot -e sh -c 'sudo pacman -Syu && yay -Syu; read -p \"Press Enter to close...\"'",
-		"tooltip": true
+		"tooltip-format": "Updates available",
+		"signal": 7
+	},
+	"group/audio": {
+		"orientation": "horizontal",
+		"modules": ["custom/microphone", "pulseaudio"]
 	}
 }
