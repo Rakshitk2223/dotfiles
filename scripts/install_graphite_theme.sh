@@ -16,27 +16,40 @@ log_warn() {
     echo "[WARN] $1"
 }
 
+log_error() {
+    echo "[ERROR] $1" >&2
+}
+
 # --- Main execution ---
 main() {
-    if [ -d "$HOME/.themes/Graphite-Dark" ]; then
+    # Check if already installed
+    if [[ -d "$HOME/.themes/Graphite-Dark" ]]; then
         log_info "Graphite GTK theme already installed."
         exit 0
     fi
 
     log_info "Cloning Graphite GTK theme repository..."
-    if [ -d "$TMP_DIR" ]; then
+    if [[ -d "$TMP_DIR" ]]; then
         rm -rf "$TMP_DIR"
     fi
-    git clone "$THEME_REPO" --depth=1 "$TMP_DIR"
+    
+    if ! git clone "$THEME_REPO" --depth=1 "$TMP_DIR" 2>/dev/null; then
+        log_error "Failed to clone Graphite theme repository"
+        exit 1
+    fi
 
     log_info "Running the theme installer..."
     cd "$TMP_DIR"
-    ./install.sh --silent -c dark -t all
+    
+    # Install dark variant with all color options
+    if ./install.sh -c dark -t all 2>/dev/null; then
+        log_info "Graphite GTK theme installed successfully."
+    else
+        log_warn "Theme installer had some issues, but may have partially installed."
+    fi
     
     log_info "Cleaning up temporary files..."
     rm -rf "$TMP_DIR"
-
-    log_info "Graphite GTK theme installed successfully."
 }
 
 main

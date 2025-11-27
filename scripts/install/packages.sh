@@ -84,7 +84,7 @@ install_arch_packages() {
         packages+=("$pkg")
         
         if is_installed "$pkg"; then
-            ((installed++))
+            ((installed++)) || true
         else
             to_install+=("$pkg")
         fi
@@ -141,7 +141,7 @@ install_aur_packages() {
         packages+=("$pkg")
         
         if is_aur_installed "$pkg"; then
-            ((installed++))
+            ((installed++)) || true
         else
             to_install+=("$pkg")
         fi
@@ -156,13 +156,24 @@ install_aur_packages() {
     
     log_info "Installing: ${to_install[*]}"
     
-    if yay -S --noconfirm --needed "${to_install[@]}"; then
-        log_list_item "ok" "All AUR packages installed"
-        return 0
-    else
-        log_warn "Some AUR packages may have failed"
+    # Install packages one by one to track failures
+    local failed=()
+    for pkg in "${to_install[@]}"; do
+        if yay -S --noconfirm --needed "$pkg" 2>/dev/null; then
+            log_list_item "ok" "$pkg"
+        else
+            log_list_item "fail" "$pkg"
+            failed+=("$pkg")
+        fi
+    done
+    
+    if [[ ${#failed[@]} -gt 0 ]]; then
+        log_warn "Failed AUR packages: ${failed[*]}"
         return 1
     fi
+    
+    log_list_item "ok" "All AUR packages installed"
+    return 0
 }
 
 # Install hardware-specific packages

@@ -34,6 +34,10 @@ DRY_RUN=false
 INSTALL_NVIDIA=false
 INSTALL_ASUS=false
 
+# Error tracking
+declare -a INSTALL_ERRORS=()
+declare -a INSTALL_WARNINGS=()
+
 show_help() {
     cat << EOF
 Usage: install.sh [OPTIONS]
@@ -58,6 +62,52 @@ Examples:
     ./install.sh --minimal          # Minimal install
     ./install.sh --nvidia --asus    # Include specific hardware support
 EOF
+}
+
+# Track errors and warnings
+track_error() {
+    local message="$1"
+    INSTALL_ERRORS+=("$message")
+    log_error "$message"
+}
+
+track_warning() {
+    local message="$1"
+    INSTALL_WARNINGS+=("$message")
+    log_warn "$message"
+}
+
+# Show installation summary with errors/warnings
+show_install_summary() {
+    echo ""
+    
+    if [[ ${#INSTALL_ERRORS[@]} -eq 0 ]] && [[ ${#INSTALL_WARNINGS[@]} -eq 0 ]]; then
+        return 0
+    fi
+    
+    echo -e "${LOG_BOLD}${LOG_YELLOW}═══════════════════════════════════════════════════${LOG_NC}"
+    echo -e "${LOG_BOLD}${LOG_YELLOW}                 Installation Summary              ${LOG_NC}"
+    echo -e "${LOG_BOLD}${LOG_YELLOW}═══════════════════════════════════════════════════${LOG_NC}"
+    echo ""
+    
+    if [[ ${#INSTALL_WARNINGS[@]} -gt 0 ]]; then
+        echo -e "${LOG_YELLOW}${LOG_BOLD}Warnings (${#INSTALL_WARNINGS[@]}):${LOG_NC}"
+        for warning in "${INSTALL_WARNINGS[@]}"; do
+            echo -e "  ${LOG_YELLOW}⚠${LOG_NC} $warning"
+        done
+        echo ""
+    fi
+    
+    if [[ ${#INSTALL_ERRORS[@]} -gt 0 ]]; then
+        echo -e "${LOG_RED}${LOG_BOLD}Errors (${#INSTALL_ERRORS[@]}):${LOG_NC}"
+        for error in "${INSTALL_ERRORS[@]}"; do
+            echo -e "  ${LOG_RED}✗${LOG_NC} $error"
+        done
+        echo ""
+        echo -e "${LOG_DIM}These errors may need manual intervention.${LOG_NC}"
+        echo -e "${LOG_DIM}Check the output above for details.${LOG_NC}"
+        echo ""
+    fi
 }
 
 # Parse command line arguments
@@ -193,7 +243,9 @@ install_dev_tools() {
         local script="$SCRIPTS_DIR/$tool"
         if [[ -x "$script" ]]; then
             log_info "Running $tool..."
-            bash "$script" || log_warn "$tool had issues"
+            if ! bash "$script"; then
+                track_warning "Dev tool script failed: $tool"
+            fi
         fi
     done
 }
@@ -207,10 +259,11 @@ install_tpm() {
     if [[ -d "$tpm_dir" ]]; then
         log_list_item "ok" "tpm already installed"
     else
-        if git clone https://github.com/tmux-plugins/tpm "$tpm_dir"; then
+        if git clone https://github.com/tmux-plugins/tpm "$tpm_dir" 2>/dev/null; then
             log_list_item "ok" "tpm installed"
         else
             log_list_item "fail" "tpm installation failed"
+            track_warning "TPM installation failed"
         fi
     fi
 }
@@ -228,15 +281,17 @@ install_ohmyzsh() {
     if ! command -v zsh &>/dev/null; then
         sudo pacman -S --noconfirm --needed zsh || {
             log_list_item "fail" "Could not install zsh"
+            track_error "Zsh installation failed"
             return 1
         }
     fi
     
     # Install Oh My Zsh
-    if sh -c "$(curl -fsSL https://install.ohmyz.sh/)" "" --unattended; then
+    if sh -c "$(curl -fsSL https://install.ohmyz.sh/)" "" --unattended 2>/dev/null; then
         log_list_item "ok" "Oh My Zsh installed"
     else
         log_list_item "fail" "Oh My Zsh installation failed"
+        track_warning "Oh My Zsh installation failed"
     fi
 }
 
@@ -252,10 +307,10 @@ set_default_shell() {
     local zsh_path
     zsh_path=$(which zsh)
     
-    if chsh -s "$zsh_path"; then
+    if chsh -s "$zsh_path" 2>/dev/null; then
         log_list_item "ok" "Default shell set to zsh"
     else
-        log_warn "Could not change default shell"
+        track_warning "Could not change default shell to zsh (run: chsh -s $(which zsh))"
     fi
 }
 
@@ -271,13 +326,15 @@ install_themes() {
     for script in "${theme_scripts[@]}"; do
         local path="$SCRIPTS_DIR/$script"
         if [[ -x "$path" ]]; then
-            bash "$path" || log_warn "$script had issues"
+            if ! bash "$path" 2>/dev/null; then
+                track_warning "Theme script failed: $script"
+            fi
         fi
     done
     
     # Apply themes
     if [[ -x "$SCRIPTS_DIR/apply-theme.sh" ]]; then
-        bash "$SCRIPTS_DIR/apply-theme.sh" || true
+        bash "$SCRIPTS_DIR/apply-theme.sh" 2>/dev/null || true
     fi
 }
 
@@ -286,7 +343,9 @@ enable_services() {
     log_substep "Enabling services..."
     
     if [[ -x "$SCRIPTS_DIR/enable-services.sh" ]]; then
-        bash "$SCRIPTS_DIR/enable-services.sh" || log_warn "Some services may have failed"
+        if ! bash "$SCRIPTS_DIR/enable-services.sh" 2>/dev/null; then
+            track_warning "Some system services may have failed to enable"
+        fi
     fi
 }
 
@@ -428,6 +487,7 @@ main() {
         log_info "Dry run complete - no changes were made"
     else
         show_post_install
+        show_install_summary
     fi
 }
 
