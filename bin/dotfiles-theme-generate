@@ -24,19 +24,35 @@ fi
 
 # Get current wallpaper
 get_current_wallpaper() {
+    local wallpaper=""
+    
+    # Try from symlink first (if target exists)
     if [[ -L "$HOME/.cache/current_wallpaper" ]]; then
-        readlink -f "$HOME/.cache/current_wallpaper"
-    elif command -v swww &>/dev/null; then
-        swww query 2>/dev/null | grep -oP 'image: \K.*' | head -1
-    else
-        echo ""
+        local target
+        target=$(readlink -f "$HOME/.cache/current_wallpaper" 2>/dev/null)
+        if [[ -f "$target" ]]; then
+            wallpaper="$target"
+        fi
     fi
+    
+    # Fallback to swww query
+    if [[ -z "$wallpaper" ]] && command -v swww &>/dev/null; then
+        wallpaper=$(swww query 2>/dev/null | grep -oP 'image: \K.*' | head -1)
+    fi
+    
+    echo "$wallpaper"
 }
 
 WALLPAPER=$(get_current_wallpaper)
 
-if [[ -z "$WALLPAPER" || ! -f "$WALLPAPER" ]]; then
-    log_error "Could not determine current wallpaper"
+if [[ -z "$WALLPAPER" ]]; then
+    log_error "Could not determine current wallpaper. Set a wallpaper first."
+    exit 1
+fi
+
+if [[ ! -f "$WALLPAPER" ]]; then
+    log_error "Wallpaper file not found: $WALLPAPER"
+    log_error "The file may have been moved or deleted. Set a new wallpaper."
     exit 1
 fi
 

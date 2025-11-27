@@ -9,6 +9,21 @@ log_info() {
     echo "[INFO] $1"
 }
 
+# Source nvm if it exists
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    \. "$NVM_DIR/nvm.sh"
+fi
+
+# Check if node is already installed and is version 24
+if command -v node &>/dev/null; then
+    current_version=$(node -v 2>/dev/null | sed 's/v//' | cut -d. -f1)
+    if [[ "$current_version" == "24" ]]; then
+        log_info "Node.js v24 is already installed. Version: $(node -v)"
+        log_info "npm version: $(npm -v)"
+        exit 0
+    fi
+fi
+
 # Ensure the nvm directory exists
 mkdir -p "$NVM_DIR"
 

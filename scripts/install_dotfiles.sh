@@ -118,24 +118,63 @@ install_wallpapers() {
 
 setup_default_theme() {
     log_info "Setting up default theme..."
-    local THEMES_DIR="$HOME/.local/bin/dotfiles/themes"
-    local DEFAULT_THEME="tokyo-night"
+    local DOTFILES_DIR="$HOME/.local/bin/dotfiles"
+    local THEMES_DIR="$DOTFILES_DIR/themes"
+    local WALLPAPERS_DIR="$DOTFILES_DIR/Wallpapers"
+    local CURRENT_WALLPAPER_LINK="$HOME/.cache/current_wallpaper"
+    
+    # Default wallpaper from custom folder
+    local DEFAULT_WALLPAPER="$WALLPAPERS_DIR/custom/darek-zabrocki-ka-blockade-5c-darekzabrocki.jpg"
     
     # Only set default theme on fresh install (no current symlink)
     if [[ ! -L "$THEMES_DIR/current" ]]; then
-        if [[ -d "$THEMES_DIR/$DEFAULT_THEME" ]]; then
-            ln -snf "$THEMES_DIR/$DEFAULT_THEME" "$THEMES_DIR/current"
-            log_info "Default theme set to: $DEFAULT_THEME"
+        # Set wallpaper first
+        mkdir -p "$HOME/.cache"
+        
+        if [[ -f "$DEFAULT_WALLPAPER" ]]; then
+            ln -snf "$DEFAULT_WALLPAPER" "$CURRENT_WALLPAPER_LINK"
+            log_info "Default wallpaper set: $(basename "$DEFAULT_WALLPAPER")"
             
-            # Apply default wallpaper
-            local WALLPAPERS_DIR="$HOME/.local/bin/dotfiles/Wallpapers"
-            local wallpaper
-            wallpaper=$(find "$WALLPAPERS_DIR/$DEFAULT_THEME" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | sort | head -1)
+            # Set wallpaper with swww if available and running in graphical session
+            if command -v swww &>/dev/null && [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+                if ! pgrep -x swww-daemon &>/dev/null; then
+                    swww-daemon &
+                    disown
+                    sleep 0.5
+                fi
+                swww img "$DEFAULT_WALLPAPER" --transition-type fade --transition-duration 1 2>/dev/null || true
+            fi
             
-            if [[ -n "$wallpaper" && -f "$wallpaper" ]]; then
-                mkdir -p "$HOME/.cache"
-                ln -snf "$wallpaper" "$HOME/.cache/current_wallpaper"
-                log_info "Default wallpaper set: $(basename "$wallpaper")"
+            # Generate wallpaper theme if wallust is available
+            if command -v wallust &>/dev/null; then
+                log_info "Generating theme from wallpaper..."
+                if [[ -x "$DOTFILES_DIR/bin/dotfiles-theme-generate" ]]; then
+                    "$DOTFILES_DIR/bin/dotfiles-theme-generate" 2>/dev/null || log_info "Theme generation skipped (will run on first login)"
+                fi
+            fi
+            
+            # Set wallpaper as the default theme
+            if [[ -d "$THEMES_DIR/wallpaper" ]]; then
+                ln -snf "$THEMES_DIR/wallpaper" "$THEMES_DIR/current"
+                log_info "Default theme set to: wallpaper (generated from custom wallpaper)"
+            elif [[ -d "$THEMES_DIR/tokyo-night" ]]; then
+                # Fallback to tokyo-night if wallpaper theme doesn't exist
+                ln -snf "$THEMES_DIR/tokyo-night" "$THEMES_DIR/current"
+                log_info "Default theme set to: tokyo-night (fallback)"
+            fi
+        else
+            # Fallback: use tokyo-night theme
+            if [[ -d "$THEMES_DIR/tokyo-night" ]]; then
+                ln -snf "$THEMES_DIR/tokyo-night" "$THEMES_DIR/current"
+                log_info "Default theme set to: tokyo-night"
+                
+                # Set tokyo-night wallpaper
+                local wallpaper
+                wallpaper=$(find "$WALLPAPERS_DIR/tokyo-night" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | sort | head -1)
+                if [[ -n "$wallpaper" && -f "$wallpaper" ]]; then
+                    ln -snf "$wallpaper" "$CURRENT_WALLPAPER_LINK"
+                    log_info "Default wallpaper set: $(basename "$wallpaper")"
+                fi
             fi
         fi
     else
