@@ -43,6 +43,7 @@ alias gpm="git push -u origin main"
 # Applications
 alias spo="spotify_player"
 alias vdl="yt-dlp --limit-rate 20M"
+alias oc="opencode"
 
 # Warp VPN
 alias wcon="warp-cli connect"
