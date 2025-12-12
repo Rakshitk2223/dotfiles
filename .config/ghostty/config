@@ -1,4 +1,12 @@
+# theme = "Cutie Pro"
+# theme = "Cursor Dark"
+# theme = "Flexoki Dark"
+# theme = "Github Dark"
 theme = Kanagawa Wave
+# theme = "Nord Wave"
+# theme = "Nvim Dark"
+# theme = "Solarized Osaka Night"
+# theme = "Zenwritten Dark"
 
 font-family = JetBrains Mono
 font-size = 11
