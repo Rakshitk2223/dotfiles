@@ -2,24 +2,6 @@
 
 Arch Linux + Hyprland configuration with a modern, maintainable structure.
 
-## Features
-
-- **Hyprland** window manager with layered config system
-- **Waybar** status bar with custom modules
-- **Wofi** application launcher
-- **Dunst** notification daemon
-- **Ghostty** terminal emulator
-- **Zsh** with Oh My Zsh and modular configuration
-- **Tmux** with plugin manager
-
-### System Features
-
-- **Config Layering** - Core configs update safely, your customizations are preserved
-- **Hook System** - Run custom scripts on install/update events
-- **Migration System** - Automatic upgrades between versions
-- **Hardware Detection** - Auto-detects NVIDIA GPU, ASUS laptop
-- **State Tracking** - Tracks installed version and update history
-
 ## Quick Start
 
 ### One-Line Install
@@ -56,10 +38,6 @@ dotfiles-update           # Interactive update
 dotfiles-update -y        # Auto-confirm
 dotfiles-update --check   # Check if updates available
 ```
-
-## Customization
-
-Your customizations are stored separately and never touched by updates:
 
 ### Shell (Zsh)
 
@@ -109,26 +87,6 @@ Run custom scripts on events:
 | `dotfiles-mic-toggle` | Toggle microphone mute |
 | `dotfiles-waybar-toggle` | Toggle waybar visibility |
 
-## Directory Structure
-
-```
-dotfiles/
-├── .config/              # Application configs
-│   ├── hypr/             # Hyprland (core/ + local/)
-│   ├── waybar/           # Waybar bar
-│   ├── wofi/             # App launcher
-│   ├── dunst/            # Notifications
-│   └── ghostty/          # Terminal
-├── bin/                  # dotfiles-* commands
-├── lib/                  # Shared libraries (state, hooks)
-├── scripts/              # Installation scripts
-│   ├── helpers/          # Logging, errors, presentation
-│   └── install/          # Modular install components
-├── default/zsh/          # Default shell configs
-├── migrations/           # Version migration scripts
-├── Wallpapers/           # Wallpaper collection
-└── docs/                 # Documentation
-```
 
 ## Documentation
 
@@ -137,12 +95,4 @@ dotfiles/
 - [Troubleshooting](docs/troubleshooting.md)
 - [Architecture](docs/architecture.md)
 
-## Requirements
 
-- Arch Linux (or Arch-based distro)
-- Git, curl, rsync
-- sudo access
-
-## License
-
-MIT
