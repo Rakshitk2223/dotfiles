@@ -307,10 +307,21 @@ set_default_shell() {
     local zsh_path
     zsh_path=$(which zsh)
     
-    if chsh -s "$zsh_path" 2>/dev/null; then
+    if [[ -z "$zsh_path" ]]; then
+        log_list_item "fail" "zsh not found in PATH"
+        track_warning "Could not find zsh binary"
+        return 1
+    fi
+    
+    log_info "Changing default shell to zsh requires authentication..."
+    log_info "You may be prompted for your password."
+    
+    if sudo chsh -s "$zsh_path" "$USER" 2>/dev/null; then
         log_list_item "ok" "Default shell set to zsh"
+        log_info "Shell change will take effect after logout/login"
     else
-        track_warning "Could not change default shell to zsh (run: chsh -s $(which zsh))"
+        log_list_item "warn" "Could not change default shell automatically"
+        track_warning "Run manually: sudo chsh -s $(which zsh) $USER"
     fi
 }
 

@@ -75,7 +75,7 @@ check_requirements() {
     
     local missing=()
     
-    for cmd in git curl; do
+    for cmd in git curl rsync; do
         if ! command -v "$cmd" &>/dev/null; then
             missing+=("$cmd")
         fi
@@ -83,8 +83,20 @@ check_requirements() {
     
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_error "Missing required commands: ${missing[*]}"
-        log_info "Install with: sudo pacman -S ${missing[*]}"
-        exit 1
+        log_info "Install with: sudo pacman -S --noconfirm --needed ${missing[*]}"
+        
+        # Attempt to auto-install if running as script (not piped from curl)
+        if [[ -t 0 ]]; then
+            log_info "Attempting to install missing packages..."
+            if sudo pacman -S --noconfirm --needed "${missing[@]}" 2>/dev/null; then
+                log_info "Required packages installed successfully"
+            else
+                log_error "Failed to install required packages. Please install manually."
+                exit 1
+            fi
+        else
+            exit 1
+        fi
     fi
     
     # Check for Arch Linux
@@ -101,18 +113,32 @@ clone_repo() {
     
     if [[ -d "$INSTALL_DIR" ]]; then
         log_warn "Directory already exists: $INSTALL_DIR"
-        echo -n "Remove and reinstall? [y/N] "
+        echo ""
+        echo "What would you like to do?"
+        echo "  1) Resume/update from existing installation (git pull)"
+        echo "  2) Fresh install (remove and reinstall)"
+        echo "  3) Abort installation"
+        echo ""
+        echo -n "Choice [1/2/3]: "
         read -r response
         
-        if [[ "$response" =~ ^[Yy]$ ]]; then
-            rm -rf "$INSTALL_DIR"
-        else
-            log_info "Updating existing installation..."
-            git -C "$INSTALL_DIR" fetch --all
-            git -C "$INSTALL_DIR" checkout "$BRANCH"
-            git -C "$INSTALL_DIR" pull --rebase
-            return 0
-        fi
+        case "$response" in
+            1|"")
+                log_info "Updating existing installation..."
+                git -C "$INSTALL_DIR" fetch --all
+                git -C "$INSTALL_DIR" checkout "$BRANCH"
+                git -C "$INSTALL_DIR" pull --rebase
+                return 0
+                ;;
+            2)
+                log_info "Removing existing installation..."
+                rm -rf "$INSTALL_DIR"
+                ;;
+            3|*)
+                log_info "Installation aborted by user"
+                exit 0
+                ;;
+        esac
     fi
     
     mkdir -p "$(dirname "$INSTALL_DIR")"

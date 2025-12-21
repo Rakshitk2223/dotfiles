@@ -44,6 +44,11 @@ if command -v fzf &> /dev/null; then
     eval "$(fzf --zsh)"
 fi
 
+# Zoxide (smart cd)
+if command -v zoxide &> /dev/null; then
+    eval "$(zoxide init --cmd cd zsh)"
+fi
+
 # Load local bin env if exists
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 
