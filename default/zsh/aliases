@@ -33,6 +33,7 @@ if command -v eza &> /dev/null; then
     alias ls="eza --long --git --no-permissions --no-user --color=always --icons=always"
     alias la="eza --long --git --all --no-permissions --no-user --color=always --icons=always"
     alias lt="eza --tree --level=2 --long --git --no-permissions --no-user --color=always --icons=always"
+    alias eza="eza --long --git --tree --level=2 --no-permissions --no-user --color=always --icons=always"
 fi
 
 # Git
@@ -50,6 +51,25 @@ alias wcon="warp-cli connect"
 alias wdis="warp-cli disconnect"
 alias wstat="warp-cli status"
 
+# LLM Proxy management
+alias proxy-start='tmux new-session -d -s llm-proxy -c ~/Workspace/Projects/LLM-API-Key-Proxy \
+    "uv run python src/proxy_app/main.py --host 127.0.0.1 --port 8000" \; \
+    split-window -h -t llm-proxy -c ~/Workspace/Projects/LLM-API-Key-Proxy \
+    "sleep 2 && uv run python -m src.proxy_app.quota_viewer" \; \
+    select-pane -t llm-proxy:0.0 \
+    && echo "Proxy started! Use Ctrl+S,a to view"'
+
+alias proxy-stop='tmux kill-session -t llm-proxy 2>/dev/null && echo "Proxy stopped" || echo "Proxy not running"'
+
+alias proxy-restart='tmux kill-session -t llm-proxy 2>/dev/null; sleep 1; \
+    tmux new-session -d -s llm-proxy -c ~/Workspace/Projects/LLM-API-Key-Proxy \
+    "uv run python src/proxy_app/main.py --host 127.0.0.1 --port 8000" \; \
+    split-window -h -t llm-proxy -c ~/Workspace/Projects/LLM-API-Key-Proxy \
+    "sleep 2 && uv run python -m src.proxy_app.quota_viewer" \; \
+    select-pane -t llm-proxy:0.0 \
+    && echo "Proxy restarted!"'
+
+alias proxy-attach='tmux attach -t llm-proxy 2>/dev/null || echo "Proxy not running. Use proxy-start first"'
+
 # Source user's local aliases (for custom aliases)
-# Create ~/.config/dotfiles/zsh/aliases.local to add your own
 [[ -f "$DOTFILES_USER_CONFIG/zsh/aliases.local" ]] && source "$DOTFILES_USER_CONFIG/zsh/aliases.local"

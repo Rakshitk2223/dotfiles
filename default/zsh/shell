@@ -39,6 +39,30 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
+# Bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
+# Ruby Gems
+if command -v gem &> /dev/null; then
+    export GEM_HOME="$(gem env user_gemhome)"
+    export PATH="$PATH:$GEM_HOME/bin"
+fi
+
+# Android SDK
+if [[ -d "$HOME/Android/Sdk" ]]; then
+    export ANDROID_HOME=$HOME/Android/Sdk
+    export PATH=$PATH:$ANDROID_HOME/emulator
+    export PATH=$PATH:$ANDROID_HOME/platform-tools
+fi
+
+# LM Studio CLI
+[[ -d "$HOME/.lmstudio/bin" ]] && export PATH="$PATH:$HOME/.lmstudio/bin"
+
+# Dart CLI completion
+[[ -f "$HOME/.dart-cli-completion/zsh-config.zsh" ]] && . "$HOME/.dart-cli-completion/zsh-config.zsh" || true
+
 # FZF
 if command -v fzf &> /dev/null; then
     eval "$(fzf --zsh)"
@@ -53,5 +77,4 @@ fi
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 
 # Source user's local shell config (for custom exports/env vars)
-# Create ~/.config/dotfiles/zsh/shell.local to add your own
 [[ -f "$DOTFILES_USER_CONFIG/zsh/shell.local" ]] && source "$DOTFILES_USER_CONFIG/zsh/shell.local"
