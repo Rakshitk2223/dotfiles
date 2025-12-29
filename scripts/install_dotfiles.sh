@@ -28,7 +28,15 @@ install_config_files() {
     local CONFIG_DEST="$HOME/.config"
 
     mkdir -p "$CONFIG_DEST"
-    rsync -avh --exclude '.git' --exclude '.gitmodules' "$CONFIG_SOURCE/" "$CONFIG_DEST/"
+    
+    # Exclude hardware-specific hypr configs (generated dynamically by setup_hypr_local_dir)
+    rsync -avh \
+        --exclude '.git' \
+        --exclude '.gitmodules' \
+        --exclude 'hypr/nvidia.conf' \
+        --exclude 'hypr/asus.conf' \
+        --exclude 'hypr/monitors.conf' \
+        "$CONFIG_SOURCE/" "$CONFIG_DEST/"
     
     # Make waybar scripts executable
     if [[ -d "$CONFIG_DEST/waybar/scripts" ]]; then
