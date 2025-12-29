@@ -266,6 +266,17 @@ setup_hypr_local_dir() {
         fi
     fi
     
+    # Detect ASUS laptop
+    local is_asus=false
+    if [[ -f /sys/class/dmi/id/sys_vendor ]]; then
+        local vendor
+        vendor=$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)
+        if [[ "$vendor" == *"ASUS"* ]] || [[ "$vendor" == *"ASUSTeK"* ]]; then
+            is_asus=true
+            log_info "ASUS laptop detected"
+        fi
+    fi
+    
     # Create hardware-specific config files if they don't exist
     # These are machine-specific and sourced by hyprland.conf
     if [[ ! -f "$HYPR_DIR/monitors.conf" ]]; then
@@ -294,14 +305,23 @@ EOF
 # ====================
 # NVIDIA GPU detected - settings enabled automatically
 
+# Core NVIDIA environment variables
 env = LIBVA_DRIVER_NAME,nvidia
-env = XDG_SESSION_TYPE,wayland
-env = GBM_BACKEND,nvidia-drm
 env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+env = __GL_VRR_ALLOWED,1
 
-cursor {
-    no_hardware_cursors = true
-}
+# Use NVIDIA GBM backend (required for newer drivers)
+env = GBM_BACKEND,nvidia-drm
+env = NVD_BACKEND,direct
+
+# Electron/Chromium apps Wayland support
+env = ELECTRON_OZONE_PLATFORM_HINT,auto
+
+# Disable atomic mode setting (can help with some display issues)
+env = WLR_DRM_NO_ATOMIC,1
+
+# Hardware cursor fix for NVIDIA
+cursor:no_hardware_cursors = true
 EOF
             log_info "Created nvidia.conf with NVIDIA settings ENABLED"
         else
@@ -312,15 +332,45 @@ EOF
 # Uncomment the following lines if you have an NVIDIA GPU:
 #
 # env = LIBVA_DRIVER_NAME,nvidia
-# env = XDG_SESSION_TYPE,wayland
-# env = GBM_BACKEND,nvidia-drm
 # env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+# env = __GL_VRR_ALLOWED,1
+# env = GBM_BACKEND,nvidia-drm
+# env = NVD_BACKEND,direct
+# env = ELECTRON_OZONE_PLATFORM_HINT,auto
+# env = WLR_DRM_NO_ATOMIC,1
 #
-# cursor {
-#     no_hardware_cursors = true
-# }
+# cursor:no_hardware_cursors = true
 EOF
             log_info "Created nvidia.conf template (no NVIDIA detected)"
+        fi
+    fi
+    
+    # Create ASUS-specific config if ASUS laptop detected
+    # Non-ASUS laptops will auto-detect GPU order
+    if [[ ! -f "$HYPR_DIR/asus.conf" ]]; then
+        if [[ "$is_asus" == "true" ]]; then
+            # ASUS detected - create config with hardcoded DRM device order
+            cat > "$HYPR_DIR/asus.conf" << 'EOF'
+# ASUS-specific configuration
+# ===========================
+# ASUS laptop detected - hardcoded DRM device order for supergfxctl compatibility
+# card0 = NVIDIA, card1 = AMD (typical ASUS ROG/TUF configuration)
+
+env = AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1
+EOF
+            log_info "Created asus.conf with ASUS-specific settings"
+        else
+            # Non-ASUS - create empty file (Hyprland auto-detects GPU order)
+            cat > "$HYPR_DIR/asus.conf" << 'EOF'
+# ASUS-specific configuration
+# ===========================
+# This file is empty because no ASUS hardware was detected.
+# Hyprland will auto-detect the GPU order.
+# 
+# If you have an ASUS laptop with supergfxctl, add:
+# env = AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1
+EOF
+            log_info "Created empty asus.conf (non-ASUS system - GPU auto-detection enabled)"
         fi
     fi
     
