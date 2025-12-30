@@ -260,146 +260,19 @@ create_first_run_flag() {
 setup_hypr_local_dir() {
     log_info "Setting up Hyprland local config directory..."
     local HYPR_LOCAL="$HOME/.config/hypr/local"
-    local HYPR_DIR="$HOME/.config/hypr"
     
     # Create local directory for user overrides
     mkdir -p "$HYPR_LOCAL"
     
-    # Detect NVIDIA GPU
-    local has_nvidia=false
-    if command -v lspci &>/dev/null; then
-        if lspci | grep -qi "nvidia"; then
-            has_nvidia=true
-            log_info "NVIDIA GPU detected"
-        fi
+    # Use the shared script to create hardware-specific configs
+    # This ensures consistent behavior between install and update
+    if [[ -x "$REPO_ROOT/bin/dotfiles-ensure-hardware-configs" ]]; then
+        "$REPO_ROOT/bin/dotfiles-ensure-hardware-configs" --quiet || {
+            log_info "Hardware config generation completed with warnings"
+        }
+    else
+        log_info "Hardware config script not found, skipping auto-detection"
     fi
-    
-    # Detect ASUS laptop
-    local is_asus=false
-    if [[ -f /sys/class/dmi/id/sys_vendor ]]; then
-        local vendor
-        vendor=$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)
-        if [[ "$vendor" == *"ASUS"* ]] || [[ "$vendor" == *"ASUSTeK"* ]]; then
-            is_asus=true
-            log_info "ASUS laptop detected"
-        fi
-    fi
-    
-    # Create hardware-specific config files if they don't exist
-    # These are machine-specific and sourced by hyprland.conf
-    if [[ ! -f "$HYPR_DIR/monitors.conf" ]]; then
-        cat > "$HYPR_DIR/monitors.conf" << 'EOF'
-# Monitor Configuration
-# =====================
-# Configure your monitors here.
-# Run 'hyprctl monitors' to see available monitors.
-#
-# Format: monitor = name, resolution@rate, position, scale
-# Example:
-# monitor = DP-1, 1920x1080@144, 0x0, 1
-# monitor = HDMI-A-1, 1920x1080@60, 1920x0, 1
-#
-# For automatic configuration:
-monitor = , preferred, auto, 1
-EOF
-        log_info "Created monitors.conf template"
-    fi
-    
-    if [[ ! -f "$HYPR_DIR/nvidia.conf" ]]; then
-        if [[ "$has_nvidia" == "true" ]]; then
-            # NVIDIA detected - create config with settings ENABLED
-            cat > "$HYPR_DIR/nvidia.conf" << 'EOF'
-# NVIDIA Configuration
-# ====================
-# NVIDIA GPU detected - settings enabled automatically
-
-# Core NVIDIA environment variables
-env = LIBVA_DRIVER_NAME,nvidia
-env = __GLX_VENDOR_LIBRARY_NAME,nvidia
-env = __GL_VRR_ALLOWED,1
-
-# Use NVIDIA GBM backend (required for newer drivers)
-env = GBM_BACKEND,nvidia-drm
-env = NVD_BACKEND,direct
-
-# Electron/Chromium apps Wayland support
-env = ELECTRON_OZONE_PLATFORM_HINT,auto
-
-# Disable atomic mode setting (can help with some display issues)
-env = WLR_DRM_NO_ATOMIC,1
-
-# Hardware cursor fix for NVIDIA
-cursor:no_hardware_cursors = true
-EOF
-            log_info "Created nvidia.conf with NVIDIA settings ENABLED"
-        else
-            # No NVIDIA - create template with settings commented
-            cat > "$HYPR_DIR/nvidia.conf" << 'EOF'
-# NVIDIA Configuration
-# ====================
-# Uncomment the following lines if you have an NVIDIA GPU:
-#
-# env = LIBVA_DRIVER_NAME,nvidia
-# env = __GLX_VENDOR_LIBRARY_NAME,nvidia
-# env = __GL_VRR_ALLOWED,1
-# env = GBM_BACKEND,nvidia-drm
-# env = NVD_BACKEND,direct
-# env = ELECTRON_OZONE_PLATFORM_HINT,auto
-# env = WLR_DRM_NO_ATOMIC,1
-#
-# cursor:no_hardware_cursors = true
-EOF
-            log_info "Created nvidia.conf template (no NVIDIA detected)"
-        fi
-    fi
-    
-    # Create ASUS-specific config if ASUS laptop detected
-    # Non-ASUS laptops will auto-detect GPU order
-    if [[ ! -f "$HYPR_DIR/asus.conf" ]]; then
-        if [[ "$is_asus" == "true" ]]; then
-            # ASUS detected - create config with hardcoded DRM device order
-            cat > "$HYPR_DIR/asus.conf" << 'EOF'
-# ASUS-specific configuration
-# ===========================
-# ASUS laptop detected - hardcoded DRM device order for supergfxctl compatibility
-# card0 = NVIDIA, card1 = AMD (typical ASUS ROG/TUF configuration)
-
-env = AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1
-EOF
-            log_info "Created asus.conf with ASUS-specific settings"
-        else
-            # Non-ASUS - create empty file (Hyprland auto-detects GPU order)
-            cat > "$HYPR_DIR/asus.conf" << 'EOF'
-# ASUS-specific configuration
-# ===========================
-# This file is empty because no ASUS hardware was detected.
-# Hyprland will auto-detect the GPU order.
-# 
-# If you have an ASUS laptop with supergfxctl, add:
-# env = AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1
-EOF
-            log_info "Created empty asus.conf (non-ASUS system - GPU auto-detection enabled)"
-        fi
-    fi
-    
-    # Create empty placeholder files for all local configs
-    # These are needed because Hyprland's source directive fails on missing files
-    local local_configs=(
-        "programs.conf"
-        "keybinds.conf"
-        "appearance.conf"
-        "autostart.conf"
-        "environment.conf"
-        "input.conf"
-        "layout.conf"
-        "windowrules.conf"
-    )
-    
-    for conf in "${local_configs[@]}"; do
-        if [[ ! -f "$HYPR_LOCAL/$conf" ]]; then
-            echo "# Local $conf - Add your overrides here" > "$HYPR_LOCAL/$conf"
-        fi
-    done
     
     # Create example custom.conf with documentation if it doesn't exist
     if [[ ! -f "$HYPR_LOCAL/custom.conf" ]]; then

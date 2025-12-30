@@ -22,7 +22,7 @@ NC='\033[0m'
 
 # Step counter
 CURRENT_STEP=0
-TOTAL_STEPS=6
+TOTAL_STEPS=7
 
 log_step() {
     ((CURRENT_STEP++)) || true
@@ -271,6 +271,18 @@ main() {
     "$REPO_ROOT/bin/dotfiles-refresh-config" "${refresh_args[@]}" hypr || {
         log_warn "Config refresh had issues (non-critical)"
     }
+    
+    # =========================================================================
+    # Step 7: Ensure hardware configs exist
+    # =========================================================================
+    log_step "Ensuring hardware configs..."
+    
+    local hw_args=()
+    $dry_run && hw_args+=(--dry-run)
+    
+    if ! "$REPO_ROOT/bin/dotfiles-ensure-hardware-configs" "${hw_args[@]}"; then
+        log_warn "Hardware config generation had issues (non-critical)"
+    fi
     
     # =========================================================================
     # Post-update
