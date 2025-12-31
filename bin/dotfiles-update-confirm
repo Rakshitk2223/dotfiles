@@ -139,8 +139,8 @@ show_update_summary() {
         
         # Group by directory
         local config_count script_count other_count
-        config_count=$(echo "$changed_files" | grep -c "^\.config/" || echo "0")
-        script_count=$(echo "$changed_files" | grep -cE "^(bin/|scripts/)" || echo "0")
+        config_count=$(echo "$changed_files" | grep -c "^\.config/" || true)
+        script_count=$(echo "$changed_files" | grep -cE "^(bin/|scripts/)" || true)
         other_count=$((file_count - config_count - script_count))
         
         [[ $config_count -gt 0 ]] && echo -e "  ${BLUE}•${NC} Config files: $config_count"
