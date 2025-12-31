@@ -1,6 +1,5 @@
 auto-cpufreq
 bibata-cursor-theme
-cloudflare-warp-bin
 grimblast-git
 hydra-launcher-bin
 lmstudio
