@@ -3,7 +3,7 @@
   "theme": "opencode",
   "autoshare": false,
   "autoupdate": true,
-  "plugin": ["@franlol/opencode-md-table-formatter@0.0.3", "@mohak34/opencode-notifier"],
+  "plugin": ["@franlol/opencode-md-table-formatter@0.0.3", "@mohak34/opencode-notifier@latest"],
   "default_agent": "plan",
   "provider": {
     "lmstudio": {
