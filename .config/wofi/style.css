@@ -1,16 +1,19 @@
+/* Option B: Pure Black Transparent Glass */
+/* Best for dark backgrounds - creates subtle darkening effect */
+
 window {
   font-family: "JetBrains Mono";
   font-weight: normal;
   font-size: 15px;
-  border: 1px solid #313244;
+  border: 1px solid rgba(0, 0, 0, 0.5);
   background-color: transparent;
   border-radius: 12px;
 }
 
 #outer-box {
-  border: 1px solid #313244;
+  border: 1px solid rgba(0, 0, 0, 0.5);
   border-radius: 12px;
-  background-color: #11111b;
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 #input {
@@ -19,12 +22,11 @@ window {
   border-left: none;
   border-right: none;
   border-top: none;
-  border-bottom: 1px solid #313244;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
   outline: none;
   box-shadow: none;
   font-weight: bold;
-  background-color: #11111b;
-  outline: none;
+  background-color: rgba(0, 0, 0, 0.25);
   border-bottom-left-radius: 0px;
   border-bottom-right-radius: 0px;
   border-top-right-radius: 12px;
@@ -35,7 +37,7 @@ window {
   margin: 8px;
   color: #cdd6f4;
   font-weight: bold;
-  background-color: #11111b;
+  background-color: rgba(0, 0, 0, 0.15);
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
 }
@@ -61,7 +63,7 @@ window {
   color: #cdd6f4;
   border: none;
   border-radius: 0px;
-  background-color: #1e1e2e;
+  background-color: rgba(0, 0, 0, 0.35);
 }
 
 #entry {
@@ -75,5 +77,5 @@ window {
 
 #entry:selected {
   border-radius: 6px;
-  background-color: #1e1e2e;
+  background-color: rgba(0, 0, 0, 0.35);
 }

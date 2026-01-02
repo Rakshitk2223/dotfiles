@@ -9,7 +9,7 @@
   min-height: 0;
 }
 window#waybar {
-  background: rgba(26, 26, 26, 0.8);
+  background: #1a1a1a; /* Solid dark - no transparency */
   color: #f8f8f2; /* Light text/icons */
   transition-property: background-color;
   transition-duration: 0.5s;
