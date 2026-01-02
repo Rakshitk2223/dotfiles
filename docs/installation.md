@@ -25,7 +25,7 @@ sudo pacman -S git curl rsync
 ### Method 1: One-Line Install (Recommended)
 
 ```bash
-curl -sL https://raw.githubusercontent.com/mohak34/dotfiles/main/boot.sh | bash
+curl -sL https://raw.githubusercontent.com/Rakshitk2223/dotfiles/main/boot.sh | bash
 ```
 
 This will:
@@ -36,7 +36,7 @@ This will:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/mohak34/dotfiles.git ~/.local/bin/dotfiles
+git clone https://github.com/Rakshitk2223/dotfiles.git ~/.local/bin/dotfiles
 
 # 2. Navigate to the directory
 cd ~/.local/bin/dotfiles

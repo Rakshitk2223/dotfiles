@@ -1,6 +1,6 @@
 #!/bin/bash
 # Bootstrap script for dotfiles installation
-# Usage: curl -sL https://raw.githubusercontent.com/mohak34/dotfiles/main/boot.sh | bash
+# Usage: curl -sL https://raw.githubusercontent.com/Rakshitk2223/dotfiles/main/boot.sh | bash
 #
 # Or with custom options:
 #   curl -sL .../boot.sh | bash -s -- --branch dev
@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Configuration - Update these for your repo
-REPO_URL="${DOTFILES_REPO:-https://github.com/mohak34/dotfiles.git}"
+REPO_URL="${DOTFILES_REPO:-https://github.com/Rakshitk2223/dotfiles.git}"
 INSTALL_DIR="${DOTFILES_DIR:-$HOME/.local/bin/dotfiles}"
 BRANCH="${DOTFILES_BRANCH:-main}"
 
