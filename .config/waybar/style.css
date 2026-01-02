@@ -221,15 +221,30 @@ window#waybar {
   background-color: rgba(80, 80, 90, 0.5);
 }
 tooltip {
-  background: #12121e;
-  border-radius: 7px;
-  border-width: 2px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  border-width: 1px;
   border-style: solid;
-  border-color: #11111b;
+  border-color: #505050;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   opacity: 1;
+  padding: 16px;
+  font-size: 16px;
 }
+
 tooltip label {
   color: #eceff4;
-  padding: 0px;
-  margin: 0px;
+  padding: 4px;
+  margin: 4px;
+  font-size: 16px;
+}
+
+#clock tooltip {
+  padding: 30px;
+  font-size: 36px;
+  min-width: 560px;
+}
+
+#clock tooltip label {
+  font-size: 36px;
 }
