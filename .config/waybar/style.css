@@ -9,7 +9,7 @@
   min-height: 0;
 }
 window#waybar {
-  background: #1a1a1a; /* Solid dark - no transparency */
+  background: #1a1a1a;
   color: #f8f8f2; /* Light text/icons */
   transition-property: background-color;
   transition-duration: 0.5s;
@@ -37,7 +37,7 @@ window#waybar {
 
 /* Tray container - single background for all icons */
 #tray {
-  background-color: rgba(60, 60, 70, 0.4);
+  background-color: #3c3c46;
   padding: 2px 6px;
   margin: 3px 3px;
   border-radius: 8px;
@@ -84,7 +84,7 @@ window#waybar {
 }
 #battery {
   color: #94e2d5;
-  background-color: rgba(60, 60, 70, 0.4);
+  background-color: #3c3c46;
   border-radius: 8px;
   padding: 2px 6px;
   margin: 3px 3px;
@@ -92,7 +92,7 @@ window#waybar {
 }
 
 #battery:hover {
-  background-color: rgba(80, 80, 90, 0.5);
+  background-color: #50505a;
 }
 
 #battery.warning {
@@ -108,7 +108,7 @@ window#waybar {
 }
 
 #battery.critical:hover {
-  background-color: rgba(80, 80, 90, 0.5);
+  background-color: #50505a;
 }
 #network.disconnected {
   color: #bf616a;
@@ -165,7 +165,7 @@ window#waybar {
 #group-audio,
 #audio,
 .audio {
-  background-color: rgba(60, 60, 70, 0.4);
+  background-color: #3c3c46;
   padding: 2px 6px;
   margin: 3px 3px;
   border-radius: 8px;
@@ -182,8 +182,8 @@ window#waybar {
   color: #89b4fa; /* Blue color for updates */
 }
 #custom-updates:hover {
-  background-color: rgba(137, 180, 250, 0.1);
-  box-shadow: 0 0 5px rgba(137, 180, 250, 0.3);
+  background-color: #1e2530;
+  box-shadow: 0 0 5px #89b4fa;
 }
 #memory.warning {
   background-color: #ebcb8b;
@@ -193,7 +193,7 @@ window#waybar {
   background-color: #bf616a;
 }
 #taskbar {
-  background-color: rgba(60, 60, 70, 0.4);
+  background-color: #3c3c46;
   padding: 2px 6px;
   margin: 3px 3px;
   border-radius: 8px;
@@ -214,11 +214,11 @@ window#waybar {
   min-height: 14px;
 }
 #taskbar button.active {
-  background-color: rgba(100, 100, 110, 0.5);
+  background-color: #64646e;
   padding: 0px 2px;
 }
 #taskbar button:hover {
-  background-color: rgba(80, 80, 90, 0.5);
+  background-color: #50505a;
 }
 tooltip {
   background: #1a1a1a;
@@ -226,7 +226,7 @@ tooltip {
   border-width: 1px;
   border-style: solid;
   border-color: #505050;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 15px #000000;
   opacity: 1;
   padding: 16px;
   font-size: 16px;
